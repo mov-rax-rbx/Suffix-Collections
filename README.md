@@ -68,7 +68,7 @@ All construction and search work for O(n). For the suffix tree implementation th
 
 [2]: https://web.stanford.edu/~mjkay/gusfield.pdf
 
-# Some benches *(thank Criterion)*
+# Some benches *(thank [Criterion](https://github.com/bheisler/criterion.rs))*
 
 * ### *Suffix array to lcp*
         time:   [433.13 us 434.87 us 436.63 us]

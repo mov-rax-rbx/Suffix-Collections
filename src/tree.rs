@@ -1,3 +1,7 @@
+//! Implementation of the suffix tree construction of which is performed in linear time
+//! https://web.stanford.edu/~mjkay/gusfield.pdf
+
+
 // TODO: maybe migration to DOP (suffix tree is struct of array)
 // no_std ??
 use std::collections::BTreeMap;

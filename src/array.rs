@@ -1,3 +1,7 @@
+//! Implementation of the suffix array construction of which is performed in linear time
+//! https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
+
+
 extern crate alloc;
 
 use alloc::vec::{Vec, IntoIter};
@@ -743,7 +747,7 @@ mod build_suffix_array {
             unreachable!();
         }
     }
-    /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/ 221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/    Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
+    /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
     // safe if
     //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
     //      tmp_end_s.len() >= offset_dict.len()

@@ -1,6 +1,42 @@
-//! Implementation of the suffix array construction of which is performed in linear time
-//! https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
+//! Implementation of the [suffix array](https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail)
+//! construction of which is performed in linear time
 
+//! # Examples
+//!
+//! ```
+//!     use suff_collections::array::*;
+//!
+//!     // let word = "Some word";
+//!     let word: &str = "Some word\0";
+//!     let find: &str = "word";
+//!
+//!     // construct suffix array
+//!     // let sa = SuffixArray::new_stack(word);
+//!     let sa: SuffixArray = SuffixArray::new(word);
+//!
+//!     // construct lcp
+//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//!     let lcp: LCP = sa.lcp();
+//!
+//!     // finds the entry position of the line 'find' in 'word'
+//!     // O(|find| * log(|word|))
+//!     let res: Option<usize> = sa.find(find);
+//!
+//!     // finds all the entry position of the line 'find' in 'word'
+//!     // O(|find| * log(|word|))
+//!     let res_all: &[usize] = sa.find_all(find);
+//!
+//!     // finds the entry position of the line 'find' in 'word'
+//!     // O(|word|)
+//!     let res: Option<usize> = sa.find_big(&sa.lcp(), find);
+//!
+//!     // finds all the entry position of the line 'find' in 'word'
+//!     // O(|word|)
+//!     let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
+//!
+//!     // convert suffix array to suffix tree
+//!     let st: SuffixTree = SuffixTree::new(sa);
+//! ```
 
 extern crate alloc;
 

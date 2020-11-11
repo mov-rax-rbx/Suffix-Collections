@@ -1,6 +1,30 @@
-//! Implementation of the suffix tree construction of which is performed in linear time
-//! https://web.stanford.edu/~mjkay/gusfield.pdf
+//! Implementation of the [suffix tree](https://web.stanford.edu/~mjkay/gusfield.pdf)
+//! construction of which is performed in linear time
 
+//! # Examples
+//!
+//! ```
+//!     use suff_collections::tree::*;
+//!
+//!     // let word = "Some word";
+//!     let word: &str = "Some word\0";
+//!     let find: &str = "word";
+//!
+//!     // construct suffix tree
+//!     let st: SuffixTree = SuffixTree::new(word);
+//!
+//!     // finds the entry position of the line 'find' in 'word'
+//!     let res: Option<usize> = st.find(find);
+//!
+//!     // construct lcp
+//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//!     // let lcp: LCP = st.lcp_stack();
+//!     let lcp: LCP = st.lcp_rec();
+//!
+//!     // convert suffix tree to suffix array
+//!     // let sa: SuffixArray = SuffixArray::from_stack(st);
+//!     let sa: SuffixArray = SuffixArray::from_rec(st);
+//! ```
 
 // TODO: maybe migration to DOP (suffix tree is struct of array)
 // no_std ??

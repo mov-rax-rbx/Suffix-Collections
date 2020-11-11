@@ -1,0 +1,23 @@
+[package]
+name = "suff_collections"
+version = "0.1.1"
+authors = ["mov-rax-rbx"]
+edition = "2018"
+keywords = ["suffix", "suffix array", "suffix tree", "linear", "text", "string", "str"]
+categories = ["data-structures"]
+description = "Fast realization of suffix array and suffix tree"
+readme = "README.md"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bench]]
+name = "bench"
+harness = false
+
+[[test]]
+name = "tests"
+path = "tests/tests.rs"
+
+[dev-dependencies]
+criterion = "^0.3.3"

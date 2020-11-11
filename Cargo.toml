@@ -7,9 +7,8 @@ keywords = ["suffix", "suffix array", "suffix tree", "linear", "text", "string",
 categories = ["data-structures"]
 description = "Fast realization of suffix array and suffix tree"
 readme = "README.md"
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+repository = "https://github.com/mov-rax-rbx/Suffix-Collections"
+license = "MIT"
 
 [[bench]]
 name = "bench"

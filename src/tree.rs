@@ -37,6 +37,14 @@ use crate::{array::*, lcp::*, canonic_word};
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NodeIdx(usize);
 impl NodeIdx {
+    /// Return node index
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let st = SuffixTree::new("word");
+    /// let root_node: &Node = st.node(NodeIdx::root());
+    /// assert_eq!(st.root_node(), root_node);
+    ///```
     pub fn root() -> Self {
         NodeIdx(0)
     }
@@ -44,6 +52,15 @@ impl NodeIdx {
     pub(self) fn new(n: usize) -> Self {
         NodeIdx(n)
     }
+
+    /// Return number node index
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let st = SuffixTree::new("word");
+    /// let root_idx: NodeIdx = NodeIdx::root();
+    /// assert_eq!(root_idx.unwrap(), 0);
+    ///```
     pub fn unwrap(self) -> usize {
         self.0
     }
@@ -59,22 +76,69 @@ pub struct Node {
 }
 
 impl Node {
+     /// Return suffix link
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let tree = SuffixTree::new("word");
+    /// let link_idx = tree.node(NodeIdx::root()).link().unwrap();
+    /// assert_eq!(link_idx, NodeIdx::root());
+    ///```
     #[inline]
     pub fn link(&self) -> Option<NodeIdx> {
         self.link
     }
+
+    /// Return parent index
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let tree = SuffixTree::new("word");
+    /// let node_idx = tree.try_to_node(NodeIdx::root(), 'r' as u8).unwrap();
+    /// let node_idx = tree.node(node_idx).parent();
+    /// assert_eq!(node_idx, NodeIdx::root());
+    ///```
     #[inline]
     pub fn parent(&self) -> NodeIdx {
         self.parent
     }
+
+    /// Return ref on children
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let tree = SuffixTree::new("word");
+    /// let children_num = tree.node(NodeIdx::root()).children().iter().count();
+    /// assert_eq!(children_num, "word\0".len());
+    ///```
     #[inline]
     pub fn children(&self) -> &BTreeMap<u8, NodeIdx> {
         &self.children
     }
+
+    /// Return edge length in tree
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let tree = SuffixTree::new("word");
+    /// let node_idx = tree.try_to_node(NodeIdx::root(), 'r' as u8).unwrap();
+    /// let node = tree.node(node_idx);
+    /// assert_eq!(node.len(), 3);
+    ///```
     #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
+
+    /// Return start pos in tree
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let tree = SuffixTree::new("word");
+    /// let node_idx = tree.try_to_node(NodeIdx::root(), 'r' as u8).unwrap();
+    /// let node = tree.node(node_idx);
+    /// assert_eq!(node.pos(), 2);
+    ///```
     #[inline]
     pub fn pos(&self) -> usize {
         self.pos
@@ -128,7 +192,7 @@ impl<'t> SuffixTree<'t> {
                 pos: 0,
             }],
         };
-        tree.build_ukkonen(word);
+        tree.build_ukkonen();
         tree.shrink_to_fit();
         tree
     }
@@ -478,18 +542,18 @@ impl<'t> SuffixTree<'t> {
         self.v.shrink_to_fit();
     }
     #[inline]
-    fn build_ukkonen(&mut self, word: &str) {
+    fn build_ukkonen(&mut self) {
         self.reserve(self.max_tree_size());
         let mut s = State {
             node_idx: NodeIdx::root(),
             edge_pos: 0,
         };
-        let word = word.as_bytes();
+        let word = self.word.as_bytes().to_owned();
         for (i, &ch) in word.iter().enumerate() {
             while
                 self
                 .try_transfer_to(&mut s, ch)
-                .if_not_transfer(|x| x.create_transfer(word, i).to_link(word))
+                .if_not_transfer(|x| x.create_transfer(&word, i).to_link(&word))
             {}
         }
     }

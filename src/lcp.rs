@@ -1,10 +1,10 @@
+//! lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) and lcp.len() == sa.len()
+
 use core::slice::{Iter, SliceIndex};
 use core::ops::Index;
 
 #[derive(Debug, Clone)]
-/// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) and lcp.len() == sa.len()
 pub struct LCP(Vec<usize>);
-
 impl LCP {
 
     pub(crate) fn new(lcp: Vec<usize>) -> Self {

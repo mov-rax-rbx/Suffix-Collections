@@ -4,7 +4,7 @@
 //! # Examples
 //!
 //! ```
-//!     use suff_collections::array::*;
+//!     use suff_collections::{array::*, tree::*, lcp::*};
 //!
 //!     // let word = "Some word";
 //!     let word: &str = "Some word\0";
@@ -35,17 +35,14 @@
 //!     let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
 //!
 //!     // convert suffix array to suffix tree
-//!     let st: SuffixTree = SuffixTree::new(sa);
+//!     let st: SuffixTree = SuffixTree::from(sa);
 //! ```
-
-extern crate alloc;
 
 use alloc::vec::{Vec, IntoIter};
 use alloc::borrow::Cow;
 use core::{str, slice::Iter, option::Option, cmp::{max, Eq}};
 
-use crate::tree::*;
-use crate::lcp::*;
+use crate::{tree::*, lcp::*, canonic_word};
 
 #[derive(Debug, Clone)]
 pub struct SuffixArray<'sa> {
@@ -91,13 +88,7 @@ impl<'sa> SuffixArray<'sa> {
                 sa: vec![],
             };
         }
-        let word =
-            if word.as_bytes().last() == Some(&0) {
-                Cow::from(word)
-            } else {
-                Cow::from(str::from_utf8(&word.as_bytes().iter().chain(&[0]).map(|&x| x).collect::<Vec<_>>()).unwrap().to_owned())
-            };
-
+        let word = canonic_word(word);
         let mut offset_dict = vec![(0, 0); max(word.len(), SuffixArray::BYTE_SIZE)];
         let mut tmp_end_s = vec![0; offset_dict.len()];
         let mut sa = vec![0; word.len()];
@@ -144,12 +135,7 @@ impl<'sa> SuffixArray<'sa> {
                 sa: vec![],
             };
         }
-        let word =
-            if word.as_bytes().last() == Some(&0) {
-                Cow::from(word)
-            } else {
-                Cow::from(str::from_utf8(&word.as_bytes().iter().chain(&[0]).map(|&x| x).collect::<Vec<_>>()).unwrap().to_owned())
-            };
+        let word = canonic_word(word);
         let mut offset_dict = vec![(0, 0); std::cmp::max(word.len(), SuffixArray::BYTE_SIZE)];
         let mut tmp_end_s = vec![0; offset_dict.len()];
         let mut sa = vec![0; word.len()];

@@ -4,7 +4,7 @@
 //! # Examples
 //!
 //! ```
-//!     use suff_collections::tree::*;
+//!     use suff_collections::{array::*, tree::*, lcp::*};
 //!
 //!     // let word = "Some word";
 //!     let word: &str = "Some word\0";
@@ -30,12 +30,10 @@
 // no_std ??
 use std::collections::BTreeMap;
 
-extern crate alloc;
 use alloc::{vec::Vec, borrow::Cow};
 use core::{str, option::Option};
 
-use crate::array::*;
-use crate::lcp::*;
+use crate::{array::*, lcp::*, canonic_word};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NodeIdx(usize);
@@ -111,15 +109,16 @@ impl<'t> SuffixTree<'t> {
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),
-                v: vec![],
+                v: vec![Node {
+                    link: Some(NodeIdx::root()),
+                    parent: NodeIdx::root(),
+                    children: BTreeMap::new(),
+                    len: 0,
+                    pos: 0,
+                }],
             };
         }
-        let new_word =
-            if word.as_bytes().last() == Some(&0) {
-                Cow::from(word)
-            } else {
-                Cow::from(str::from_utf8(&word.as_bytes().iter().chain(&[0]).map(|&x| x).collect::<Vec<_>>()).unwrap().to_owned())
-            };
+        let new_word = canonic_word(word);
         let mut tree = Self {
             word: new_word,
             v: vec![Node {

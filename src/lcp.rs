@@ -11,26 +11,68 @@ impl LCP {
         Self(lcp)
     }
 
+    /// Return ref to inner slice
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::new("word");
+    /// let lcp = sa.lcp();
+    /// let inner_lcp: &[usize] = lcp.inner();
+    /// ```
     #[inline]
     pub fn inner(&self) -> &[usize] {
         &self.0
     }
 
+    /// Move inner vec
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::new("word");
+    /// let lcp = sa.lcp();
+    /// let inner_lcp: Vec<usize> = lcp.owned();
+    /// // lcp not valid
+    /// ```
     #[inline]
     pub fn owned(self) -> Vec<usize> {
         self.0
     }
 
+    /// Return iterator to inner slice
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::new("word");
+    /// let lcp = sa.lcp();
+    /// let copy = lcp.iter().map(|&x| x).collect::<Vec<_>>();
+    /// ```
     #[inline]
     pub fn iter(&self) -> Iter<'_, usize> {
         self.0.iter()
     }
 
+    /// Return length lcp
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::new("word");
+    /// let lcp_len: usize = sa.lcp().len();
+    /// assert_eq!("word\0".len(), lcp_len);
+    /// ```
     #[inline]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Return value by index. In debug safe. In release disable bound checks
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::new("word");
+    /// let lcp = sa.lcp();
+    /// // safe because "word".len() >= 0
+    /// let len = unsafe { lcp.idx(0) };
+    /// ```
     #[cfg(debug_assertions)]
     #[inline]
     pub unsafe fn idx<I: SliceIndex<[usize]>>(&self, index: I) -> &I::Output {

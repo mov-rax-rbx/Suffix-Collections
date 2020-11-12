@@ -514,459 +514,469 @@ mod build_suffix_array {
     use core::cmp::Ord;
 
     const LEN_NAIVE_SORT: usize = 50;
-    #[inline]
-    unsafe fn naive_sort<T: ToUsize + Ord + Copy, P: Ord>(sort: &mut [T], s_idx: &[P]) {
-        // safe if max(sort) < s_idx.len()
-        debug_assert!(sort.iter().max().unwrap().to_usize() < s_idx.len());
-        sort.sort_by(|&a, &b| s_idx.get_unchecked(a.to_usize()..).cmp(&s_idx.get_unchecked(b.to_usize()..)));
-    }
-    #[inline]
-    unsafe fn create_bucket_dict<T: ToUsize + Copy>(
-        s_idx: &[T],
-        offset_dict: &mut [(usize, usize)]
-    ) {
-        // safe because max(s_idx) < offset_dict.len()
-        s_idx.iter().for_each(|&x| offset_dict.get_unchecked_mut(x.to_usize()).0 += 1);
-        offset_dict.iter_mut().fold(0, |acc, offs| {
-            let cnt = offs.0;
-            *offs = (acc, acc + cnt);
-            acc + cnt
-        });
-    }
-    #[inline]
-    unsafe fn add_lms_to_end<T: ToUsize + Copy>(
-        s_idx: &[T],
-        sa_lms: &[usize],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        offset_dict.iter().zip(tmp_end_s.iter_mut()).for_each(|(&(_, x), end_s)| *end_s = x);
-        sa_lms.iter().rev().for_each(|&x| {
-            // safe x == sa_lms && max(sa_lms) < s_idx_len() && max(s_idx) < tmp_end_s.len() &&
-            // max(tmp_end_s) < sa.len() && sa_init.len() == sa.len()
-            let ptr_end_s = tmp_end_s.get_unchecked_mut(s_idx.get_unchecked(x).to_usize());
-            *ptr_end_s -= 1;
-            *sa.get_unchecked_mut(*ptr_end_s) = x;
-            *sa_init.get_unchecked_mut(*ptr_end_s) = true;
-        });
-    }
-    #[allow(non_snake_case)]
-    #[inline]
-    unsafe fn add_L_to_start<T: ToUsize + Copy>(
-        s_idx: &[T],
-        t: &[TSuff],
-        offset_dict: &mut [(usize, usize)],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        for x in 0..sa.len() {
-            // safe x < sa.len() && sa_init.len() == sa.len()
-            let mut idx = *sa.get_unchecked(x);
-            if idx > 0 && *sa_init.get_unchecked(x) == true {
-                idx -= 1;
-                // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
-                // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
-                if *t.get_unchecked(idx) == TSuff::L {
-                    let ptr_offset = offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx).to_usize());
-                    *sa.get_unchecked_mut(ptr_offset.0) = idx;
-                    *sa_init.get_unchecked_mut(ptr_offset.0) = true;
-                    ptr_offset.0 += 1;
-                }
+    macro_rules! suff_arr {
+        ($($tp:ident),* $(,)?) => {
+        $(
+            #[inline]
+            unsafe fn naive_sort<T: ToUsize + Ord + Copy, P: Ord>(sort: &mut [T], s_idx: &[P]) {
+                // safe if max(sort) < s_idx.len()
+                debug_assert!(sort.iter().max().unwrap().to_usize() < s_idx.len());
+                sort.sort_by(|&a, &b| s_idx.get_unchecked(a.to_usize()..).cmp(&s_idx.get_unchecked(b.to_usize()..)));
             }
-        }
-    }
-    #[allow(non_snake_case)]
-    #[inline]
-    unsafe fn add_S_to_end<T: ToUsize + Copy>(
-        s_idx: &[T],
-        t: &[TSuff],
-        offset_dict: &mut [(usize, usize)],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        for x in (0..sa.len()).rev() {
-            // safe x < sa.len() && sa_init.len() == sa.len()
-            let mut idx = *sa.get_unchecked(x);
-            if idx > 0 && *sa_init.get_unchecked(x) == true {
-                idx -= 1;
-                // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
-                // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
-                if *t.get_unchecked(idx) == TSuff::S {
-                    let ptr_offset = offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx).to_usize());
-                    ptr_offset.1 -= 1;
-                    *sa.get_unchecked_mut(ptr_offset.1) = idx;
-                    *sa_init.get_unchecked_mut(ptr_offset.1) = true;
-                }
-            }
-        }
-    }
-    #[inline]
-    unsafe fn induced_sort<T: ToUsize + Copy>(
-        s_idx: &[T],
-        sa_lms: &[usize],
-        t: &[TSuff],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        create_bucket_dict(s_idx, offset_dict);
-        add_lms_to_end(s_idx, sa_lms, offset_dict, tmp_end_s, sa, sa_init);
-        add_L_to_start(s_idx, t, offset_dict, sa, sa_init);
-        add_S_to_end(s_idx, t, offset_dict, sa, sa_init);
-    }
-    #[inline]
-    unsafe fn calc_type<T: Ord>(s_idx: &[T]) -> Vec<TSuff> {
-        let mut t = vec![TSuff::S; s_idx.len()];
-        for i in (0..s_idx.len() - 1).rev() {
-            // safe 0 < i + 1 < s_idx.len() && t.len() == s_idx_len()
-            if *s_idx.get_unchecked(i) > *s_idx.get_unchecked(i + 1) {
-                *t.get_unchecked_mut(i) = TSuff::L;
-            } else if *s_idx.get_unchecked(i) == *s_idx.get_unchecked(i + 1) {
-                *t.get_unchecked_mut(i) = *t.get_unchecked(i + 1);
-            }
-        }
-        t
-    }
-    #[inline]
-    fn calc_lms(t: &[TSuff]) -> Vec<usize> {
-        t.windows(2).enumerate()
-            .filter(|&(_, x)| x[0] == TSuff::L && x[1] == TSuff::S)
-            .map(|(i, _)| i + 1).collect::<Vec<_>>()
-    }
-    #[inline]
-    unsafe fn sublms_is_eq<T: Eq>(s_idx: &[T], t: &[TSuff], x: usize, prev: usize) -> bool {
-        for i in 0.. {
-            // safe because sublms is TSuff::S ... TSuff::S (<= ... > <=) &&
-            // we have sentinel symbol in end => \0 - always TSuff::S (> <=) &&
-            // 0 <= x < s_idx.len() && s_idx.len() == t.len() &&
-            // compare only 2 sublms not all word
-            if *s_idx.get_unchecked(x + i) != *s_idx.get_unchecked(prev + i)
-            || *t.get_unchecked(x + i) != *t.get_unchecked(prev + i) {
-                return false;
-            }
-            if i != 0
-            && (
-                (*t.get_unchecked(x + i - 1) == TSuff::L && *t.get_unchecked(x + i) == TSuff::S)
-                || (*t.get_unchecked(prev + i - 1) == TSuff::L && *t.get_unchecked(prev + i) == TSuff::S)
+            #[inline]
+            unsafe fn create_bucket_dict<T: ToUsize + Copy>(
+                s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)]
             ) {
-                return true;
+                // safe because max(s_idx) < offset_dict.len()
+                s_idx.iter().for_each(|&x| offset_dict.get_unchecked_mut(x.to_usize()).0 += 1);
+                offset_dict.iter_mut().fold(0, |acc, offs| {
+                    let cnt = offs.0;
+                    *offs = (acc, acc + cnt);
+                    acc + cnt
+                });
             }
-        }
-        false
-    }
-    #[inline]
-    unsafe fn create_new_str<T: Ord>(
-        s_idx: &[T],
-        offset_dict: &mut [(usize, usize)],
-        sort_sublms: &[usize],
-        t: &[TSuff],
-        idx_lms: &[usize],
-    ) -> Vec<usize> {
-        let mut prev = s_idx.len() - 1;
-        // safe prev < offset_dict.len() && s_idx.len() <= offset_dict.len()
-        offset_dict.get_unchecked_mut(prev).0 = 0;
-        let sorted_lms = sort_sublms.iter().skip(1).filter(|&&x|
-            // safe 0 < x < sort_sublms.len() && max(sa) < x.len() (sa contains sort sumlms => max(sa) == max(idx_lms))
-            x > 0 && *t.get_unchecked(x) == TSuff::S && *t.get_unchecked(x - 1) == TSuff::L
-        );
-        for &x in sorted_lms {
-            // safe x < offset_dict.len() && sorted_lms == sa &&
-            // sort_sublms.len() == s_idx.len() && s_idx.len() <= offset_dict.len()
-            // range(prev) == range(x)
-            if sublms_is_eq(&s_idx, &t, x, prev) {
-                offset_dict.get_unchecked_mut(x).0 = offset_dict.get_unchecked(prev).0
-            } else {
-                offset_dict.get_unchecked_mut(x).0 = offset_dict.get_unchecked(prev).0 + 1
+            #[inline]
+            unsafe fn add_lms_to_end<T: ToUsize + Copy>(
+                s_idx: &[T],
+                sa_lms: &[$tp],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                offset_dict.iter().zip(tmp_end_s.iter_mut()).for_each(|(&(_, x), end_s)| *end_s = x);
+                sa_lms.iter().rev().for_each(|&x| {
+                    // safe x == sa_lms && max(sa_lms) < s_idx_len() && max(s_idx) < tmp_end_s.len() &&
+                    // max(tmp_end_s) < sa.len() && sa_init.len() == sa.len()
+                    let ptr_end_s = tmp_end_s.get_unchecked_mut(s_idx.get_unchecked(x as usize).to_usize());
+                    *ptr_end_s -= 1;
+                    *sa.get_unchecked_mut(*ptr_end_s as usize) = x;
+                    *sa_init.get_unchecked_mut(*ptr_end_s as usize) = true;
+                });
             }
-            prev = x;
-        }
-        // safe max(idx_lms) < s_idx.len() && s_idx.len() <= offset_dict.len()
-        idx_lms.iter().map(|&x| offset_dict.get_unchecked(x).0).collect()
-    }
-    #[inline]
-    unsafe fn pack_lms<T: ToUsize + Copy>(idx_lms: &[usize], s_idx: &[T], offset_dict: &mut [(usize, usize)]) {
-        idx_lms.iter().enumerate().for_each(|(i, &x)| {
-            // safe max(idx_lms) < s_idx.len() &&
-            // max(s_idx) < offset_dict.len()
-            let index = s_idx.get_unchecked(x).to_usize();
-            offset_dict.get_unchecked_mut(index).0 += 1;
-            offset_dict.get_unchecked_mut(index).1 = i;
-        });
-    }
-    #[inline]
-    fn lms_is_unique(offset_dict: &[(usize, usize)]) -> bool {
-        !offset_dict.iter().any(|&(x, _)| x > 1)
-    }
-    #[inline]
-    unsafe fn unpack_lms(idx_lms: &[usize], offset_dict: &[(usize, usize)]) -> Vec<usize> {
-        // safe max(offset_dict) < idx_lms.len()
-        offset_dict.iter()
-            .filter(|&&(x, _)| x != 0)
-            .map(|&(_, y)| *idx_lms.get_unchecked(y)).collect()
-    }
-    #[inline]
-    unsafe fn sort_lms_in_new_str<T: ToUsize + Ord + Copy>(
-        new_s_idx: &[T],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool],
-        idx_lms: &[usize]
-    ) -> Vec<usize> {
-        let new_size = idx_lms.len();
-        // safe new_size == idx_lms.len() && max(idx_lms) < s_idx.len() &&
-        // s_idx.len() <= offset_dict.len() && s_idx.len() == tmp_end_s.len() &&
-        // s_idx.len() == sa.len() && sa.len() == sa_init.len()
-        suffix_array(
-            &new_s_idx,
-            offset_dict.get_unchecked_mut(..new_size),
-            tmp_end_s.get_unchecked_mut(..new_size),
-            sa.get_unchecked_mut(..new_size),
-            sa_init.get_unchecked_mut(..new_size)
-        );
-        // safe new_size <= sa.len() by previous explanation && max(sa) < idx_lms.len()
-        sa.get_unchecked(..new_size)
-            .iter().map(|&x| *idx_lms.get_unchecked(x)).collect()
-    }
-    #[inline]
-    fn clear<T: Default>(src: &mut [T]) {
-        src.iter_mut().for_each(|x| *x = T::default());
-    }
-    #[inline]
-    unsafe fn sort_lms<T: ToUsize + Ord + Copy>(
-        s_idx: &[T],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool],
-        t: &[TSuff],
-        idx_lms: &[usize],
-    ) -> Vec<usize> {
-        pack_lms(idx_lms, s_idx, offset_dict);
-        if idx_lms.len() == 1 {
-            // safe we have sentinel '\0'
-            vec![*idx_lms.get_unchecked(0)]
-        } else if lms_is_unique(offset_dict) {
-            unpack_lms(idx_lms, offset_dict)
-        } else if idx_lms.len() <= LEN_NAIVE_SORT {
-            let mut sort_lms = idx_lms.clone().to_vec();
-            // safe because max(idx_lms) < s_idx.len()
-            naive_sort(&mut sort_lms, s_idx);
-            sort_lms
-        } else if idx_lms.len() > 1 {
-            clear(offset_dict);
-            induced_sort(s_idx, idx_lms, t, offset_dict, tmp_end_s, sa, sa_init);
-            let new_s_idx = create_new_str(s_idx, offset_dict, sa, t, idx_lms);
-
-            clear(sa_init);
-            clear(offset_dict);
-
-            sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms)
-        } else {
-            unreachable!();
-        }
-    }
-    /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
-    // safe if
-    //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
-    //      tmp_end_s.len() >= offset_dict.len()
-    //      sa.len() >= s_idx.len()
-    //      sa.len() >= s_init.len()
-    //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array<T: ToUsize + Ord + Copy>(
-        s_idx: &[T],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        let t = calc_type(&s_idx);
-        // lms => ... L S ... (... > <= ...)
-        let idx_lms = calc_lms(&t);
-        let sa_lms = sort_lms(s_idx, offset_dict, tmp_end_s, sa, sa_init, &t, &idx_lms);
-
-        clear(sa_init);
-        clear(offset_dict);
-
-        induced_sort(s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-    }
-
-    #[derive(Debug)]
-    enum TState {
-        Rec (
-            Vec<usize>,
-            usize,
-        ),
-        RecEnd (
-            Vec<usize>,
-            Vec<usize>,
-            Vec<TSuff>,
-            usize,
-        ),
-        End (
-            Vec<usize>,
-            Vec<TSuff>,
-            usize,
-        ),
-    }
-
-    #[repr(u8)]
-    enum NTState {
-        RecEnd,
-        End,
-    }
-    // safe if
-    //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
-    //      tmp_end_s.len() >= offset_dict.len()
-    //      sa.len() >= s_idx.len()
-    //      sa.len() >= s_init.len()
-    //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array_stack<T: ToUsize + Ord + Copy>(
-        s_idx: &[T],
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool]
-    ) {
-        let mut state_stack = Vec::default();
-
-        let t = calc_type(&s_idx);
-        let idx_lms = calc_lms(&t);
-        pack_lms(&idx_lms, &s_idx, offset_dict);
-
-        let (res_lms, end_state) =
-            if idx_lms.len() == 1 {
-                // safe we have sentinel => \0
-                (vec![*idx_lms.get_unchecked(0)], NTState::End)
-            } else if lms_is_unique(offset_dict) {
-                (unpack_lms(&idx_lms, offset_dict), NTState::End)
-            } else if idx_lms.len() > 1 {
-                clear(offset_dict);
-                induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-                let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
-
-                clear(sa_init);
-                clear(offset_dict);
-
-                let new_size = idx_lms.len();
-                state_stack.push(TState::Rec(new_s_idx, new_size));
-                (suffix_array_stack_inner(offset_dict, tmp_end_s, sa, sa_init, state_stack), NTState::RecEnd)
-            } else {
-                unreachable!();
-            };
-
-        match end_state {
-            NTState::End => {
-                clear(sa_init);
-                clear(offset_dict);
-                induced_sort(&s_idx, &res_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-            }
-            NTState::RecEnd => {
-                clear(sa_init);
-                clear(offset_dict);
-                // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                let sa_lms = res_lms.iter().map(|&x| *idx_lms.get_unchecked(x)).collect::<Vec<_>>();
-                induced_sort(&s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-            }
-        }
-    }
-
-    // safe if
-    //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
-    //      tmp_end_s.len() >= offset_dict.len()
-    //      sa.len() >= s_idx.len()
-    //      sa.len() >= s_init.len()
-    //      s_idx.last() == 0
-    unsafe fn suffix_array_stack_inner(
-        offset_dict: &mut [(usize, usize)],
-        tmp_end_s: &mut [usize],
-        sa: &mut [usize],
-        sa_init: &mut [bool],
-        mut state_stack: Vec<TState>,
-    ) -> Vec<usize> {
-        let mut res_lms = Vec::default();
-        loop {
-            match state_stack.pop() {
-                None => return res_lms,
-                Some(state) => {
-                    match state {
-                        TState::Rec(s_idx, size) => {
-                            // safe size < offset_dict.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
-                            // safe s_idx.len() <= sa.len()
-                            let sa = sa.get_unchecked_mut(..s_idx.len());
-                            // safe s_idx.len() <= sa_init.len()
-                            let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
-                            let t = calc_type(&s_idx);
-                            let idx_lms = calc_lms(&t);
-                            pack_lms(&idx_lms, &s_idx, offset_dict);
-
-                            if idx_lms.len() == 1 {
-                                // safe we have sentinel => \0
-                                res_lms = vec![*idx_lms.get_unchecked(0)];
-
-                                state_stack.push(TState::End(s_idx, t, size));
-                            } else if lms_is_unique(offset_dict) {
-                                res_lms = unpack_lms(&idx_lms, offset_dict);
-
-                                state_stack.push(TState::End(s_idx, t, size));
-                            } else if idx_lms.len() <= LEN_NAIVE_SORT {
-                                let mut sort_lms = idx_lms.clone().to_vec();
-                                // safe because max(idx_lms) < s_idx.len()
-                                naive_sort(&mut sort_lms, &s_idx);
-                                res_lms = sort_lms;
-                                state_stack.push(TState::End(s_idx, t, size));
-                            } else if idx_lms.len() > 1 {
-                                clear(offset_dict);
-                                // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                                induced_sort(&s_idx, &idx_lms, &t, offset_dict,
-                                    tmp_end_s.get_unchecked_mut(..size),
-                                    sa, sa_init);
-                                let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
-
-                                clear(sa_init);
-                                clear(offset_dict);
-
-                                let new_size = idx_lms.len();
-                                state_stack.push(TState::RecEnd(s_idx, idx_lms, t, size));
-                                state_stack.push(TState::Rec(new_s_idx, new_size));
-                            } else {
-                                unreachable!();
-                            };
-                        }
-                        TState::End(s_idx, t, size) => {
-                            // safe size == idx_lms.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
-                            let sa = sa.get_unchecked_mut(..s_idx.len());
-                            let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
-                            clear(sa_init);
-                            clear(offset_dict);
-                            // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                            induced_sort(&s_idx, &res_lms, &t, offset_dict,
-                                tmp_end_s.get_unchecked_mut(..size),
-                                sa, sa_init);
-                            res_lms = Vec::from(sa);
-                        }
-                        TState::RecEnd(s_idx, idx_lms, t, size) => {
-                            // safe size == idx_lms.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
-                            let sa = sa.get_unchecked_mut(..s_idx.len());
-                            let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
-                            clear(sa_init);
-                            clear(offset_dict);
-                            // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                            let sa_lms = res_lms.iter().map(|&x| *idx_lms.get_unchecked(x)).collect::<Vec<_>>();
-                            induced_sort(&s_idx, &sa_lms, &t, offset_dict,
-                                tmp_end_s.get_unchecked_mut(..size),
-                                sa, sa_init);
-                            res_lms = Vec::from(sa);
+            #[allow(non_snake_case)]
+            #[inline]
+            unsafe fn add_L_to_start<T: ToUsize + Copy>(
+                s_idx: &[T],
+                t: &[TSuff],
+                offset_dict: &mut [($tp, $tp)],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                for x in 0..sa.len() {
+                    // safe x < sa.len() && sa_init.len() == sa.len()
+                    let mut idx = *sa.get_unchecked(x);
+                    if idx > 0 && *sa_init.get_unchecked(x) == true {
+                        idx -= 1;
+                        // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
+                        // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
+                        if *t.get_unchecked(idx as usize) == TSuff::L {
+                            let ptr_offset = offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx as usize).to_usize());
+                            *sa.get_unchecked_mut(ptr_offset.0 as usize) = idx;
+                            *sa_init.get_unchecked_mut(ptr_offset.0 as usize) = true;
+                            ptr_offset.0 += 1;
                         }
                     }
                 }
             }
-        }
+            #[allow(non_snake_case)]
+            #[inline]
+            unsafe fn add_S_to_end<T: ToUsize + Copy>(
+                s_idx: &[T],
+                t: &[TSuff],
+                offset_dict: &mut [($tp, $tp)],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                for x in (0..sa.len()).rev() {
+                    // safe x < sa.len() && sa_init.len() == sa.len()
+                    let mut idx = *sa.get_unchecked(x);
+                    if idx > 0 && *sa_init.get_unchecked(x) == true {
+                        idx -= 1;
+                        // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
+                        // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
+                        if *t.get_unchecked(idx as usize) == TSuff::S {
+                            let ptr_offset = offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx as usize).to_usize());
+                            ptr_offset.1 -= 1;
+                            *sa.get_unchecked_mut(ptr_offset.1 as usize) = idx;
+                            *sa_init.get_unchecked_mut(ptr_offset.1 as usize) = true;
+                        }
+                    }
+                }
+            }
+            #[inline]
+            unsafe fn induced_sort<T: ToUsize + Copy>(
+                s_idx: &[T],
+                sa_lms: &[$tp],
+                t: &[TSuff],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                create_bucket_dict(s_idx, offset_dict);
+                add_lms_to_end(s_idx, sa_lms, offset_dict, tmp_end_s, sa, sa_init);
+                add_L_to_start(s_idx, t, offset_dict, sa, sa_init);
+                add_S_to_end(s_idx, t, offset_dict, sa, sa_init);
+            }
+            #[inline]
+            unsafe fn calc_type<T: Ord>(s_idx: &[T]) -> Vec<TSuff> {
+                let mut t = vec![TSuff::S; s_idx.len()];
+                for i in (0..s_idx.len() - 1).rev() {
+                    // safe 0 < i + 1 < s_idx.len() && t.len() == s_idx_len()
+                    if *s_idx.get_unchecked(i) > *s_idx.get_unchecked(i + 1) {
+                        *t.get_unchecked_mut(i) = TSuff::L;
+                    } else if *s_idx.get_unchecked(i) == *s_idx.get_unchecked(i + 1) {
+                        *t.get_unchecked_mut(i) = *t.get_unchecked(i + 1);
+                    }
+                }
+                t
+            }
+            #[inline]
+            fn calc_lms(t: &[TSuff]) -> Vec<$tp> {
+                t.windows(2).enumerate()
+                    .filter(|&(_, x)| x[0] == TSuff::L && x[1] == TSuff::S)
+                    .map(|(i, _)| (i + 1) as $tp).collect::<Vec<_>>()
+            }
+            #[inline]
+            unsafe fn sublms_is_eq<T: Eq>(s_idx: &[T], t: &[TSuff], x: usize, prev: usize) -> bool {
+                for i in 0.. {
+                    // safe because sublms is TSuff::S ... TSuff::S (<= ... > <=) &&
+                    // we have sentinel symbol in end => \0 - always TSuff::S (> <=) &&
+                    // 0 <= x < s_idx.len() && s_idx.len() == t.len() &&
+                    // compare only 2 sublms not all word
+                    if *s_idx.get_unchecked(x + i) != *s_idx.get_unchecked(prev + i)
+                    || *t.get_unchecked(x + i) != *t.get_unchecked(prev + i) {
+                        return false;
+                    }
+                    if i != 0
+                    && (
+                        (*t.get_unchecked(x + i - 1) == TSuff::L && *t.get_unchecked(x + i) == TSuff::S)
+                        || (*t.get_unchecked(prev + i - 1) == TSuff::L && *t.get_unchecked(prev + i) == TSuff::S)
+                    ) {
+                        return true;
+                    }
+                }
+                false
+            }
+            #[inline]
+            unsafe fn create_new_str<T: Ord>(
+                s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)],
+                sort_sublms: &[$tp],
+                t: &[TSuff],
+                idx_lms: &[$tp],
+            ) -> Vec<$tp> {
+                let mut prev = s_idx.len() as $tp - 1;
+                // safe prev < offset_dict.len() && s_idx.len() <= offset_dict.len()
+                offset_dict.get_unchecked_mut(prev as usize).0 = 0;
+                let sorted_lms = sort_sublms.iter().skip(1).filter(|&&x|
+                    // safe 0 < x < sort_sublms.len() && max(sa) < x.len() (sa contains sort sumlms => max(sa) == max(idx_lms))
+                    x > 0 && *t.get_unchecked(x as usize) == TSuff::S && *t.get_unchecked((x - 1) as usize) == TSuff::L
+                );
+                for &x in sorted_lms {
+                    // safe x < offset_dict.len() && sorted_lms == sa &&
+                    // sort_sublms.len() == s_idx.len() && s_idx.len() <= offset_dict.len()
+                    // range(prev) == range(x)
+                    if sublms_is_eq(&s_idx, &t, x as usize, prev as usize) {
+                        offset_dict.get_unchecked_mut(x as usize).0 = offset_dict.get_unchecked(prev as usize).0
+                    } else {
+                        offset_dict.get_unchecked_mut(x as usize).0 = offset_dict.get_unchecked(prev as usize).0 + 1
+                    }
+                    prev = x;
+                }
+                // safe max(idx_lms) < s_idx.len() && s_idx.len() <= offset_dict.len()
+                idx_lms.iter().map(|&x| offset_dict.get_unchecked(x as usize).0).collect()
+            }
+            #[inline]
+            unsafe fn pack_lms<T: ToUsize + Copy>(idx_lms: &[$tp], s_idx: &[T], offset_dict: &mut [($tp, $tp)]) {
+                idx_lms.iter().enumerate().for_each(|(i, &x)| {
+                    // safe max(idx_lms) < s_idx.len() &&
+                    // max(s_idx) < offset_dict.len()
+                    let index = s_idx.get_unchecked(x as usize).to_usize();
+                    offset_dict.get_unchecked_mut(index).0 += 1;
+                    offset_dict.get_unchecked_mut(index).1 = i as $tp;
+                });
+            }
+            #[inline]
+            fn lms_is_unique(offset_dict: &[($tp, $tp)]) -> bool {
+                !offset_dict.iter().any(|&(x, _)| x > 1)
+            }
+            #[inline]
+            unsafe fn unpack_lms(idx_lms: &[$tp], offset_dict: &[($tp, $tp)]) -> Vec<$tp> {
+                // safe max(offset_dict) < idx_lms.len()
+                offset_dict.iter()
+                    .filter(|&&(x, _)| x != 0)
+                    .map(|&(_, y)| *idx_lms.get_unchecked(y as usize)).collect()
+            }
+            #[inline]
+            unsafe fn sort_lms_in_new_str<T: ToUsize + Ord + Copy>(
+                new_s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool],
+                idx_lms: &[$tp]
+            ) -> Vec<$tp> {
+                let new_size = idx_lms.len();
+                // safe new_size == idx_lms.len() && max(idx_lms) < s_idx.len() &&
+                // s_idx.len() <= offset_dict.len() && s_idx.len() == tmp_end_s.len() &&
+                // s_idx.len() == sa.len() && sa.len() == sa_init.len()
+                suffix_array(
+                    &new_s_idx,
+                    offset_dict.get_unchecked_mut(..new_size),
+                    tmp_end_s.get_unchecked_mut(..new_size),
+                    sa.get_unchecked_mut(..new_size),
+                    sa_init.get_unchecked_mut(..new_size)
+                );
+                // safe new_size <= sa.len() by previous explanation && max(sa) < idx_lms.len()
+                sa.get_unchecked(..new_size)
+                    .iter().map(|&x| *idx_lms.get_unchecked(x as usize)).collect()
+            }
+            #[inline]
+            fn clear<T: Default>(src: &mut [T]) {
+                src.iter_mut().for_each(|x| *x = T::default());
+            }
+            #[inline]
+            unsafe fn sort_lms<T: ToUsize + Ord + Copy>(
+                s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool],
+                t: &[TSuff],
+                idx_lms: &[$tp],
+            ) -> Vec<$tp> {
+                pack_lms(idx_lms, s_idx, offset_dict);
+                if idx_lms.len() == 1 {
+                    // safe we have sentinel '\0'
+                    vec![*idx_lms.get_unchecked(0)]
+                } else if lms_is_unique(offset_dict) {
+                    unpack_lms(idx_lms, offset_dict)
+                } else if idx_lms.len() <= LEN_NAIVE_SORT {
+                    let mut sort_lms = idx_lms.clone().to_vec();
+                    // safe because max(idx_lms) < s_idx.len()
+                    naive_sort(&mut sort_lms, s_idx);
+                    sort_lms
+                } else if idx_lms.len() > 1 {
+                    clear(offset_dict);
+                    induced_sort(s_idx, idx_lms, t, offset_dict, tmp_end_s, sa, sa_init);
+                    let new_s_idx = create_new_str(s_idx, offset_dict, sa, t, idx_lms);
+                
+                    clear(sa_init);
+                    clear(offset_dict);
+                
+                    sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms)
+                } else {
+                    unreachable!();
+                }
+            }
+            /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/     221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/       Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
+            // safe if
+            //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
+            //      tmp_end_s.len() >= offset_dict.len()
+            //      sa.len() >= s_idx.len()
+            //      sa.len() >= s_init.len()
+            //      s_idx.last() == 0
+            pub(crate) unsafe fn suffix_array<T: ToUsize + Ord + Copy>(
+                s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                let t = calc_type(&s_idx);
+                // lms => ... L S ... (... > <= ...)
+                let idx_lms = calc_lms(&t);
+                let sa_lms = sort_lms(s_idx, offset_dict, tmp_end_s, sa, sa_init, &t, &idx_lms);
+            
+                clear(sa_init);
+                clear(offset_dict);
+            
+                induced_sort(s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
+            }
+        
+        
+            #[derive(Debug)]
+            enum TState {
+                Rec (
+                    Vec<$tp>,
+                    usize,
+                ),
+                RecEnd (
+                    Vec<$tp>,
+                    Vec<$tp>,
+                    Vec<TSuff>,
+                    usize,
+                ),
+                End (
+                    Vec<$tp>,
+                    Vec<TSuff>,
+                    usize,
+                ),
+            }
+        
+            #[repr(u8)]
+            enum NTState {
+                RecEnd,
+                End,
+            }
+            // safe if
+            //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
+            //      tmp_end_s.len() >= offset_dict.len()
+            //      sa.len() >= s_idx.len()
+            //      sa.len() >= s_init.len()
+            //      s_idx.last() == 0
+            pub(crate) unsafe fn suffix_array_stack<T: ToUsize + Ord + Copy>(
+                s_idx: &[T],
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool]
+            ) {
+                let mut state_stack = Vec::default();
+            
+                let t = calc_type(&s_idx);
+                let idx_lms = calc_lms(&t);
+                pack_lms(&idx_lms, &s_idx, offset_dict);
+            
+                let (res_lms, end_state) =
+                    if idx_lms.len() == 1 {
+                        // safe we have sentinel => \0
+                        (vec![*idx_lms.get_unchecked(0)], NTState::End)
+                    } else if lms_is_unique(offset_dict) {
+                        (unpack_lms(&idx_lms, offset_dict), NTState::End)
+                    } else if idx_lms.len() > 1 {
+                        clear(offset_dict);
+                        induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
+                        let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
+                    
+                        clear(sa_init);
+                        clear(offset_dict);
+                    
+                        let new_size = idx_lms.len();
+                        state_stack.push(TState::Rec(new_s_idx, new_size));
+                        (suffix_array_stack_inner(offset_dict, tmp_end_s, sa, sa_init, state_stack), NTState::RecEnd)
+                    } else {
+                        unreachable!();
+                    };
+                
+                match end_state {
+                    NTState::End => {
+                        clear(sa_init);
+                        clear(offset_dict);
+                        induced_sort(&s_idx, &res_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
+                    }
+                    NTState::RecEnd => {
+                        clear(sa_init);
+                        clear(offset_dict);
+                        // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
+                        let sa_lms = res_lms.iter().map(|&x| *idx_lms.get_unchecked(x as usize)).collect::<Vec<_>>();
+                        induced_sort(&s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
+                    }
+                }
+            }
+        
+            // safe if
+            //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
+            //      tmp_end_s.len() >= offset_dict.len()
+            //      sa.len() >= s_idx.len()
+            //      sa.len() >= s_init.len()
+            //      s_idx.last() == 0
+            unsafe fn suffix_array_stack_inner(
+                offset_dict: &mut [($tp, $tp)],
+                tmp_end_s: &mut [$tp],
+                sa: &mut [$tp],
+                sa_init: &mut [bool],
+                mut state_stack: Vec<TState>,
+            ) -> Vec<$tp> {
+                let mut res_lms = Vec::default();
+                loop {
+                    match state_stack.pop() {
+                        None => return res_lms,
+                        Some(state) => {
+                            match state {
+                                TState::Rec(s_idx, size) => {
+                                    // safe size < offset_dict.len()
+                                    let offset_dict = offset_dict.get_unchecked_mut(..size);
+                                    // safe s_idx.len() <= sa.len()
+                                    let sa = sa.get_unchecked_mut(..s_idx.len());
+                                    // safe s_idx.len() <= sa_init.len()
+                                    let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
+                                    let t = calc_type(&s_idx);
+                                    let idx_lms = calc_lms(&t);
+                                    pack_lms(&idx_lms, &s_idx, offset_dict);
+                                
+                                    if idx_lms.len() == 1 {
+                                        // safe we have sentinel => \0
+                                        res_lms = vec![*idx_lms.get_unchecked(0)];
+                                    
+                                        state_stack.push(TState::End(s_idx, t, size));
+                                    } else if lms_is_unique(offset_dict) {
+                                        res_lms = unpack_lms(&idx_lms, offset_dict);
+                                    
+                                        state_stack.push(TState::End(s_idx, t, size));
+                                    } else if idx_lms.len() <= LEN_NAIVE_SORT {
+                                        let mut sort_lms = idx_lms.clone().to_vec();
+                                        // safe because max(idx_lms) < s_idx.len()
+                                        naive_sort(&mut sort_lms, &s_idx);
+                                        res_lms = sort_lms;
+                                        state_stack.push(TState::End(s_idx, t, size));
+                                    } else if idx_lms.len() > 1 {
+                                        clear(offset_dict);
+                                        // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
+                                        induced_sort(&s_idx, &idx_lms, &t, offset_dict,
+                                            tmp_end_s.get_unchecked_mut(..size),
+                                            sa, sa_init);
+                                        let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
+                                        
+                                        clear(sa_init);
+                                        clear(offset_dict);
+                                        
+                                        let new_size = idx_lms.len();
+                                        state_stack.push(TState::RecEnd(s_idx, idx_lms, t, size));
+                                        state_stack.push(TState::Rec(new_s_idx, new_size));
+                                    } else {
+                                        unreachable!();
+                                    };
+                                }
+                                TState::End(s_idx, t, size) => {
+                                    // safe size == idx_lms.len()
+                                    let offset_dict = offset_dict.get_unchecked_mut(..size);
+                                    let sa = sa.get_unchecked_mut(..s_idx.len());
+                                    let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
+                                    clear(sa_init);
+                                    clear(offset_dict);
+                                    // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
+                                    induced_sort(&s_idx, &res_lms, &t, offset_dict,
+                                        tmp_end_s.get_unchecked_mut(..size),
+                                        sa, sa_init);
+                                    res_lms = Vec::from(sa);
+                                }
+                                TState::RecEnd(s_idx, idx_lms, t, size) => {
+                                    // safe size == idx_lms.len()
+                                    let offset_dict = offset_dict.get_unchecked_mut(..size);
+                                    let sa = sa.get_unchecked_mut(..s_idx.len());
+                                    let sa_init = sa_init.get_unchecked_mut(..s_idx.len());
+                                    clear(sa_init);
+                                    clear(offset_dict);
+                                    // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
+                                    let sa_lms = res_lms.iter().map(|&x| *idx_lms.get_unchecked(x as usize)).collect::<Vec<_>>();
+                                    induced_sort(&s_idx, &sa_lms, &t, offset_dict,
+                                        tmp_end_s.get_unchecked_mut(..size),
+                                        sa, sa_init);
+                                    res_lms = Vec::from(sa);
+                                }
+                            }
+                        }
+                    }
+                }
+            })*
+        };
     }
+
+    // TODO: add u16, u32 with concat_idents!
+    // suff_arr!(u16, u32, u64, usize);
+    suff_arr!(usize);
 }

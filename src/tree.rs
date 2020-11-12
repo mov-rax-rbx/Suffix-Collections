@@ -27,7 +27,6 @@
 //! ```
 
 // TODO: maybe migration to DOP (suffix tree is struct of array)
-// no_std ??
 use std::collections::BTreeMap;
 
 use alloc::{vec::Vec, borrow::Cow};

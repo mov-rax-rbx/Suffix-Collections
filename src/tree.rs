@@ -200,6 +200,7 @@ impl<'t> SuffixTree<'t> {
                     let suf_len = unsafe { *total_len.get_unchecked(node_idx.unwrap()) } - pref_len;
                     let pref_len = tree.node(node_idx).len - suf_len;
                     let split_idx = tree.split(
+                        &word,
                         node_idx,
                         tree.node(node_idx).pos + pref_len,
                         pref_len,
@@ -484,11 +485,12 @@ impl<'t> SuffixTree<'t> {
             node_idx: NodeIdx::root(),
             edge_pos: 0,
         };
-        for (i, &ch) in word.as_bytes().iter().enumerate() {
+        let word = word.as_bytes();
+        for (i, &ch) in word.iter().enumerate() {
             while
                 self
                 .try_transfer_to(&mut s, ch)
-                .if_not_transfer(|x| x.create_transfer(i).to_link())
+                .if_not_transfer(|x| x.create_transfer(word, i).to_link(word))
             {}
         }
     }
@@ -521,14 +523,14 @@ impl<'t> SuffixTree<'t> {
         s.edge_pos = node.pos + node.len;
     }
     #[inline]
-    fn split(&mut self, node_idx: NodeIdx, split_word_pos: usize, pref_len: usize, suf_len: usize) -> NodeIdx {
+    fn split(&mut self, word: &[u8], node_idx: NodeIdx, split_word_pos: usize, pref_len: usize, suf_len: usize) -> NodeIdx {
         let insert_node = self.add_node(self.node(node_idx).parent, pref_len, self.node(node_idx).pos);
         self.set_child(
             insert_node,
             node_idx,
             // safe because split_word_pos < self.word.len()
             // if split_word_pos >= self.word.len() then never call insert because processing self.word is done
-            unsafe { *self.word.as_bytes().get_unchecked(split_word_pos) }
+            unsafe { *word.get_unchecked(split_word_pos) }
         );
 
         self.set_child(
@@ -536,18 +538,18 @@ impl<'t> SuffixTree<'t> {
             insert_node,
             // safe because self.node(node_idx).pos < self.word.len()
             // if self.node(node_idx).pos >= self.word.len() never hepens because in tree all self.node.pos < self.word.len()
-            unsafe { *self.word.as_bytes().get_unchecked(self.node(node_idx).pos) }
+            unsafe { *word.get_unchecked(self.node(node_idx).pos) }
         );
 
         self.update_edge(node_idx, insert_node, suf_len, split_word_pos);
         insert_node
     }
     #[inline]
-    fn skip_walk(&self, link: &mut NodeIdx, word_pos: &mut usize, edge_len: &mut usize) {
+    fn skip_walk(&self, word: &[u8], link: &mut NodeIdx, word_pos: &mut usize, edge_len: &mut usize) {
         loop {
             // safe because word_pos < self.word.len().
             // if self.node(s.node_idx).pos >= self.word.len() never hepens because in tree all self.node.pos < self.word.len()
-            let key = unsafe { *self.word.as_bytes().get_unchecked(*word_pos) };
+            let key = unsafe { *word.get_unchecked(*word_pos) };
             *link = self.to_node(*link, key);
             let node = self.node(*link);
             if *edge_len > node.len {
@@ -655,12 +657,12 @@ impl<'r, 't, 's> Transfer<'r, 't, 's> {
         }
     }
     #[inline]
-    fn create_transfer(self, ch_pos: usize) -> Transfer<'r, 't, 's> {
+    fn create_transfer(self, word: &[u8], ch_pos: usize) -> Transfer<'r, 't, 's> {
         match self {
             Transfer::StopInEdge(tree, s, ch) => {
                 let suf_len = tree.node(s.node_idx).pos + tree.node(s.node_idx).len - s.edge_pos;
                 let pref_len = tree.node(s.node_idx).len - suf_len;
-                s.node_idx = tree.split(s.node_idx, s.edge_pos, pref_len, suf_len);
+                s.node_idx = tree.split(word, s.node_idx, s.edge_pos, pref_len, suf_len);
                 let add_node = tree.add_node(s.node_idx, tree.word.len() - ch_pos, ch_pos);
                 tree.set_child(s.node_idx, add_node, ch);
                 Transfer::StopInNode(tree, s, ch)
@@ -674,7 +676,7 @@ impl<'r, 't, 's> Transfer<'r, 't, 's> {
         }
     }
     #[inline]
-    fn to_link(self) -> bool {
+    fn to_link(self, word: &[u8]) -> bool {
         match self {
             Transfer::StopInNode(tree, s, _) => {
                 if tree.is_root(s.node_idx) {
@@ -702,7 +704,7 @@ impl<'r, 't, 's> Transfer<'r, 't, 's> {
                             }
                         }
                         let mut link = tree.node(parent_idx).link.unwrap();
-                        tree.skip_walk(&mut link, &mut word_pos, &mut edge_len);
+                        tree.skip_walk(word, &mut link, &mut word_pos, &mut edge_len);
                         if edge_len == tree.node(link).len {
                             tree.update_link(s, link);
                         } else {
@@ -713,6 +715,7 @@ impl<'r, 't, 's> Transfer<'r, 't, 's> {
                             };
                             let insert_node =
                                 tree.split(
+                                    word,
                                     s_link.node_idx,
                                     s_link.edge_pos,
                                     edge_len,

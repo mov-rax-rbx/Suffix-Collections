@@ -39,7 +39,7 @@
 //! ```
 
 use alloc::vec::{Vec, IntoIter};
-use alloc::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned};
 use core::{str, slice::Iter, option::Option, cmp::{max, Eq}};
 
 use crate::{tree::*, lcp::*, canonic_word};
@@ -136,7 +136,7 @@ impl<'sa> SuffixArray<'sa> {
             };
         }
         let word = canonic_word(word);
-        let mut offset_dict = vec![(0, 0); std::cmp::max(word.len(), SuffixArray::BYTE_SIZE)];
+        let mut offset_dict = vec![(0, 0); max(word.len(), SuffixArray::BYTE_SIZE)];
         let mut tmp_end_s = vec![0; offset_dict.len()];
         let mut sa = vec![0; word.len()];
         let mut sa_init = vec![bool::default(); word.len()];
@@ -512,6 +512,7 @@ mod build_suffix_array {
     }
     impl_ToUsize!(u8, u16, u32, u64, usize);
     use core::cmp::Ord;
+    use super::*;
 
     const LEN_NAIVE_SORT: usize = 50;
     macro_rules! suff_arr {
@@ -763,16 +764,16 @@ mod build_suffix_array {
                     clear(offset_dict);
                     induced_sort(s_idx, idx_lms, t, offset_dict, tmp_end_s, sa, sa_init);
                     let new_s_idx = create_new_str(s_idx, offset_dict, sa, t, idx_lms);
-                
+
                     clear(sa_init);
                     clear(offset_dict);
-                
+
                     sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms)
                 } else {
                     unreachable!();
                 }
             }
-            /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/     221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/       Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
+            /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
             // safe if
             //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
             //      tmp_end_s.len() >= offset_dict.len()
@@ -790,14 +791,13 @@ mod build_suffix_array {
                 // lms => ... L S ... (... > <= ...)
                 let idx_lms = calc_lms(&t);
                 let sa_lms = sort_lms(s_idx, offset_dict, tmp_end_s, sa, sa_init, &t, &idx_lms);
-            
+
                 clear(sa_init);
                 clear(offset_dict);
-            
+
                 induced_sort(s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
             }
-        
-        
+
             #[derive(Debug)]
             enum TState {
                 Rec (
@@ -816,7 +816,7 @@ mod build_suffix_array {
                     usize,
                 ),
             }
-        
+
             #[repr(u8)]
             enum NTState {
                 RecEnd,
@@ -877,7 +877,7 @@ mod build_suffix_array {
                     }
                 }
             }
-        
+
             // safe if
             //      offset_dict.len() > max(s_idx) && offset_dict.len() >= s_idx.len()
             //      tmp_end_s.len() >= offset_dict.len()

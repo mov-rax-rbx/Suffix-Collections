@@ -27,10 +27,11 @@
 //! ```
 
 // TODO: maybe migration to DOP (suffix tree is struct of array)
-use std::collections::BTreeMap;
 
-use alloc::{vec::Vec, borrow::Cow};
-use core::{str, option::Option};
+use alloc::collections::BTreeMap;
+use alloc::{vec::Vec, borrow::Cow, borrow::ToOwned};
+use core::{result::Result, format_args, str, option::Option};
+use core::fmt;
 
 use crate::{array::*, lcp::*, canonic_word};
 
@@ -404,11 +405,10 @@ impl<'t> SuffixTree<'t> {
     ///
     /// SuffixTree::new("word").to_graphviz();
     /// ```
-    pub fn to_graphviz(&self) {
+    pub fn to_graphviz(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         assert!(self.word.is_ascii());
-        println!("digraph G {{");
         let size = (self.v.len() as f64 * 0.5) as u64;
-        println!("    size=\"{}, {}\"", size, size);
+        f.write_fmt(format_args!("    size=\"{}, {}\"", size, size))?;
         for (i, x) in self.v.iter().enumerate() {
             let node_name = &self.word[x.pos..x.pos + x.len];
             let child = &x.children;
@@ -417,20 +417,25 @@ impl<'t> SuffixTree<'t> {
                 let end = start + self.node(node_idx).len;
                 let label_name = self.word.as_bytes()[start] as char;
                 let children_name = &self.word[start..end];
-                println!("    _{}_{} -> _{}_{} [byte_label=\"_{}_{}\\npos: {}, len: {}\"]",
-                i, node_name, node_idx.unwrap(), children_name, node_idx.unwrap(), label_name, start, end - start);
+                f.write_fmt(
+                    format_args!("    _{}_{} -> _{}_{} [byte_label=\"_{}_{}\\npos: {}, len: {}\"]",
+                    i, node_name, node_idx.unwrap(), children_name, node_idx.unwrap(), label_name, start, end - start)
+                )?;
             }
             match x.link {
                 Some(link_idx) => {
                     let start = self.node(link_idx).pos;
                     let end = start + self.node(link_idx).len;
                     let link_name = &self.word[start..end];
-                    println!("    _{}_{} -> _{}_{} [style=dotted]", i, node_name, link_idx.unwrap(), link_name);
+                    f.write_fmt(
+                        format_args!("    _{}_{} -> _{}_{} [style=dotted]", i, node_name, link_idx.unwrap(), link_name)
+                    )?;
                 }
                 None => (),
             }
         }
-        println!("}}");
+        f.write_str("}}")?;
+        Ok(())
     }
 
     /// Semantic to check if the node is root

@@ -2,6 +2,7 @@
 
 use core::slice::{Iter, SliceIndex};
 use core::ops::Index;
+use alloc::vec::Vec;
 
 #[derive(Debug, Clone)]
 pub struct LCP(Vec<usize>);

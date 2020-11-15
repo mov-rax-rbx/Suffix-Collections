@@ -30,7 +30,7 @@
 
 use alloc::collections::BTreeMap;
 use alloc::{vec::Vec, borrow::Cow, borrow::ToOwned};
-use core::{result::Result, format_args, str, option::Option};
+use core::{format_args, str, option::Option};
 use core::fmt;
 
 use crate::{array::*, lcp::*, canonic_word};
@@ -403,9 +403,11 @@ impl<'t> SuffixTree<'t> {
     /// ```
     /// use suff_collections::tree::*;
     ///
-    /// SuffixTree::new("word").to_graphviz();
+    /// let mut buff = String::new();
+    /// SuffixTree::new("word").to_graphviz(&mut buff).unwrap();
+    /// println!("{}", buff);
     /// ```
-    pub fn to_graphviz(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+    pub fn to_graphviz(&self, f: &mut impl fmt::Write) -> fmt::Result {
         assert!(self.word.is_ascii());
         let size = (self.v.len() as f64 * 0.5) as u64;
         f.write_fmt(format_args!("    size=\"{}, {}\"", size, size))?;

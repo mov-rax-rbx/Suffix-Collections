@@ -5,7 +5,6 @@ pub mod tree;
 pub mod array;
 pub mod lcp;
 
-pub(crate) mod bit_set;
 
 use alloc::borrow::{Cow, ToOwned};
 use alloc::vec::Vec;

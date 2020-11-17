@@ -18,12 +18,18 @@
 //!
 //!     // construct lcp
 //!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-//!     // let lcp: LCP = st.lcp_stack();
-//!     let lcp: LCP = st.lcp_rec();
+//!     // let lcp: LCP<u8> = st.lcp_stack::<u8>();
+//!     // let lcp: LCP<u16> = st.lcp_stack::<u16>();
+//!     // let lcp: LCP<u32> = st.lcp_stack::<u32>();
+//!     // let lcp: LCP<usize> = st.lcp_stack::<usize>();
+//!     let lcp: LCP<usize> = st.lcp_rec::<usize>();
 //!
 //!     // convert suffix tree to suffix array
-//!     // let sa: SuffixArray = SuffixArray::from_stack(st);
-//!     let sa: SuffixArray = SuffixArray::from_rec(st);
+//!     // let sa = SuffixArray::<u8>::from_stack(st);
+//!     // let sa = SuffixArray::<u16>::from_stack(st);
+//!     // let sa = SuffixArray::<u32>::from_stack(st);
+//!     // let sa = SuffixArray::<usize>::from_stack(st);
+//!     let sa = SuffixArray::<usize>::from_rec(st);
 //! ```
 
 // TODO: maybe migration to DOP (suffix tree is struct of array)
@@ -33,7 +39,7 @@ use alloc::{vec::Vec, borrow::Cow, borrow::ToOwned};
 use core::{format_args, str, option::Option};
 use core::fmt;
 
-use crate::{array::*, lcp::*, canonic_word};
+use crate::{array::*, array::build_suffix_array::SaType, lcp::*, canonic_word};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NodeIdx(usize);
@@ -202,10 +208,13 @@ impl<'t> SuffixTree<'t> {
     /// ```
     /// use suff_collections::{array::*, tree::*};
     ///
-    /// let st: SuffixArray = SuffixArray::new("word\0");
-    /// let sa: SuffixTree = SuffixTree::from(st);
+    /// // let st = SuffixArray::<u8>::new("word\0");
+    /// // let st = SuffixArray::<u16>::new("word\0");
+    /// // let st = SuffixArray::<u32>::new("word\0");
+    /// let st = SuffixArray::<usize>::new("word\0");
+    /// let sa = SuffixTree::from(st);
     /// ```
-    pub fn from(array: SuffixArray) -> Self {
+    pub fn from<T: SaType<T>>(array: SuffixArray<T>) -> Self {
         let lcp = array.lcp();
         let (word, sa) = array.split_owned();
         let mut tree = Self {
@@ -224,7 +233,7 @@ impl<'t> SuffixTree<'t> {
 
         let tree_size = tree.max_tree_size();
         tree.reserve(tree_size);
-        let mut total_len = vec![0; tree_size];
+        let mut total_len = vec![T::zero(); tree_size];
         let mut node_idx = NodeIdx::root();
         let word = tree.word.as_bytes().to_owned();
 
@@ -237,7 +246,7 @@ impl<'t> SuffixTree<'t> {
                 if pref_len == unsafe { *total_len.get_unchecked(node_idx.unwrap()) }
                     || tree.is_root(node_idx)
                 {
-                    let start = start + pref_len;
+                    let start = (start + pref_len).to_usize();
                     let len = word.len() - start;
                     let add_idx = tree.add_node(node_idx, len, start);
 
@@ -248,7 +257,7 @@ impl<'t> SuffixTree<'t> {
                     // safe because 0 <= node_idx, add_idx < tree.len() && total_len.len() == tree.len()
                     unsafe {
                         *total_len.get_unchecked_mut(add_idx.unwrap()) =
-                            total_len.get_unchecked(node_idx.unwrap()) + len;
+                            *total_len.get_unchecked(node_idx.unwrap()) + T::try_from(len).ok().unwrap();
                     }
                     node_idx = add_idx;
                     break;
@@ -257,18 +266,18 @@ impl<'t> SuffixTree<'t> {
                 } else if unsafe { pref_len < *total_len.get_unchecked(node_idx.unwrap())
                     && pref_len > *total_len.get_unchecked(tree.node(node_idx).parent.unwrap()) }
                 {
-                    let start = start + pref_len;
+                    let start = (start + pref_len).to_usize();
                     let len = word.len() - start;
 
                     // safe because 0 <= node_idx < tree.len() && total_len.len() == tree.len()
                     let suf_len = unsafe { *total_len.get_unchecked(node_idx.unwrap()) } - pref_len;
-                    let pref_len = tree.node(node_idx).len - suf_len;
+                    let pref_len = tree.node(node_idx).len - suf_len.to_usize();
                     let split_idx = tree.split(
                         &word,
                         node_idx,
                         tree.node(node_idx).pos + pref_len,
                         pref_len,
-                        suf_len
+                        suf_len.to_usize()
                     );
 
                     // safe because 0 <= node_idx, split_idx < tree.len() && total_len.len() == tree.len()
@@ -285,7 +294,7 @@ impl<'t> SuffixTree<'t> {
                     // safe because 0 <= node_idx, split_idx < tree.len() && total_len.len() == tree.len()
                     unsafe {
                         *total_len.get_unchecked_mut(add_idx.unwrap()) =
-                            *total_len.get_unchecked(split_idx.unwrap()) + len;
+                            *total_len.get_unchecked(split_idx.unwrap()) + T::try_from(len).ok().unwrap();
                     }
                     node_idx = add_idx;
                     break;
@@ -328,11 +337,14 @@ impl<'t> SuffixTree<'t> {
     /// ```
     /// use suff_collections::tree::*;
     ///
-    /// let lcp = SuffixTree::new("word").lcp_stack();
+    /// // let lcp = SuffixTree::new("word").lcp_stack::<u8>();
+    /// // let lcp = SuffixTree::new("word").lcp_stack::<u16>();
+    /// // let lcp = SuffixTree::new("word").lcp_stack::<u32>();
+    /// let lcp = SuffixTree::new("word").lcp_stack::<usize>();
     /// ```
-    pub fn lcp_stack(&self) -> LCP {
-        let mut lcp = Vec::with_capacity(self.word.len());
-        lcp.push(0);
+    pub fn lcp_stack<T: SaType<T>>(&self) -> LCP<T> {
+        let mut lcp = Vec::<T>::with_capacity(self.word.len());
+        lcp.push(T::zero());
         let mut stack = Vec::with_capacity(self.word.len());
         let mut prev_len = 0;
 
@@ -351,7 +363,7 @@ impl<'t> SuffixTree<'t> {
                 Some((_, &i)) => {
                     let node = self.node(i);
                     if node.children.is_empty() {
-                        lcp.push(prev_len);
+                        lcp.push(T::try_from(prev_len).ok().unwrap());
                         prev_len = x.len;
                     } else {
                         let len = x.len + node.len;
@@ -382,15 +394,18 @@ impl<'t> SuffixTree<'t> {
     /// ```
     /// use suff_collections::tree::*;
     ///
-    /// let lcp = SuffixTree::new("word").lcp_rec();
+    /// // let lcp = SuffixTree::new("word").lcp_rec::<u8>();
+    /// // let lcp = SuffixTree::new("word").lcp_rec::<u16>();
+    /// // let lcp = SuffixTree::new("word").lcp_rec::<u32>();
+    /// let lcp = SuffixTree::new("word").lcp_rec::<usize>();
     /// ```
-    pub fn lcp_rec(&self) -> LCP {
+    pub fn lcp_rec<T: SaType<T>>(&self) -> LCP<T> {
         let node = self.node(NodeIdx::root());
         if node.children.is_empty() {
             return LCP::new(vec![]);
         }
-        let mut lcp = Vec::with_capacity(self.word.len());
-        lcp.push(0);
+        let mut lcp = Vec::<T>::with_capacity(self.word.len());
+        lcp.push(T::zero());
         let mut prev_len = 0;
         for (_, &child) in node.children.iter().skip(1) {
             self.lcp_rec_inner(child, node.len, &mut prev_len, &mut lcp);
@@ -677,10 +692,10 @@ impl<'t> SuffixTree<'t> {
         node.pos = pos;
     }
     #[inline]
-    fn lcp_rec_inner(&self, node_idx: NodeIdx, len: usize, prev_len: &mut usize, lcp: &mut Vec<usize>) {
+    fn lcp_rec_inner<T: SaType<T>>(&self, node_idx: NodeIdx, len: usize, prev_len: &mut usize, lcp: &mut Vec<T>) {
         let node = self.node(node_idx);
         if node.children.is_empty() {
-            lcp.push(*prev_len);
+            lcp.push(T::try_from(*prev_len).ok().unwrap());
             *prev_len = len;
             return;
         }

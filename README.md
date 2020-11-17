@@ -1,66 +1,75 @@
 # Suffix Collections
 
-Fast realization of suffix array and suffix tree for substring search, longest common prefix array (lcp array).
+Fast realization of suffix array and suffix tree for substring search, longest common prefix array (lcp array). (no std)
 
 ## Example
 * **SuffixTree**
 ```rust
-    use suff_collections::tree::*;
+     use suff_collections::{array::*, tree::*, lcp::*};
 
-    // let word = "Some word";
-    let word: &str = "Some word\0";
-    let find: &str = "word";
+     // let word = "Some word";
+     let word: &str = "Some word\0";
+     let find: &str = "word";
 
-    // construct suffix tree
-    let st: SuffixTree = SuffixTree::new(word);
+     // construct suffix tree
+     let st: SuffixTree = SuffixTree::new(word);
 
-    // finds the entry position of the line 'find' in 'word'
-    let res: Option<usize> = st.find(find);
+     // finds the entry position of the line 'find' in 'word'
+     let res: Option<usize> = st.find(find);
 
-    // construct lcp
-    // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-    // let lcp: LCP = st.lcp_stack();
-    let lcp: LCP = st.lcp_rec();
+     // construct lcp
+     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+     // let lcp: LCP<u8> = st.lcp_stack::<u8>();
+     // let lcp: LCP<u16> = st.lcp_stack::<u16>();
+     // let lcp: LCP<u32> = st.lcp_stack::<u32>();
+     // let lcp: LCP<usize> = st.lcp_stack::<usize>();
+     let lcp: LCP<usize> = st.lcp_rec::<usize>();
 
-    // convert suffix tree to suffix array
-    // let sa: SuffixArray = SuffixArray::from_stack(st);
-    let sa: SuffixArray = SuffixArray::from_rec(st);
+     // convert suffix tree to suffix array
+     // let sa = SuffixArray::<u8>::from_stack(st);
+     // let sa = SuffixArray::<u16>::from_stack(st);
+     // let sa = SuffixArray::<u32>::from_stack(st);
+     // let sa = SuffixArray::<usize>::from_stack(st);
+     let sa = SuffixArray::<usize>::from_rec(st);
 ```
 
 * **SuffixArray**
 ```rust
-    use suff_collections::array::*;
+     use suff_collections::{array::*, tree::*, lcp::*};
 
-    // let word = "Some word";
-    let word: &str = "Some word\0";
-    let find: &str = "word";
+     // let word = "Some word";
+     let word: &str = "Some word\0";
+     let find: &str = "word";
 
-    // construct suffix array
-    // let sa = SuffixArray::new_stack(word);
-    let sa: SuffixArray = SuffixArray::new(word);
+     // construct suffix array
+     // let sa = SuffixArray::<usize>::new_stack(word);
+     // let sa = SuffixArray::<u8>::new(word);
+     // let sa = SuffixArray::<u16>::new(word);
+     // let sa = SuffixArray::<u32>::new(word);
+     let sa = SuffixArray::<usize>::new(word);
 
-    // construct lcp
-    // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-    let lcp: LCP = sa.lcp();
+     // construct lcp
+     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+     let lcp: LCP<usize> = sa.lcp();
 
-    // finds the entry position of the line 'find' in 'word'
-    // O(|find| * log(|word|))
-    let res: Option<usize> = sa.find(find);
+     // finds the entry position of the line 'find' in 'word'
+     // O(|find| * log(|word|))
+     let res: Option<usize> = sa.find(find);
 
-    // finds all the entry position of the line 'find' in 'word'
-    // O(|find| * log(|word|))
-    let res_all: &[usize] = sa.find_all(find);
+     // finds all the entry position of the line 'find' in 'word'
+     // O(|find| * log(|word|))
+     let res_all: &[usize] = sa.find_all(find);
 
-    // finds the entry position of the line 'find' in 'word'
-    // O(|word|)
-    let res: Option<usize> = sa.find_big(&sa.lcp(), find);
+     // finds the entry position of the line 'find' in 'word'
+     // O(|word|)
+     let res: Option<usize> = sa.find_big(&sa.lcp(), find);
 
-    // finds all the entry position of the line 'find' in 'word'
-    // O(|word|)
-    let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
+     // finds all the entry position of the line 'find' in 'word'
+     // O(|word|)
+     let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
 
-    // convert suffix array to suffix tree
-    let st: SuffixTree = SuffixTree::new(sa);
+     // convert suffix array to suffix tree
+     let st = SuffixTree::from(sa);
 ```
 All construction and search work for O(n). For the suffix tree implementation the [Ukkonen algorithm][2] is taken and for the suffix array implementation the [SA-IS algorithm][1] is taken.
 
@@ -70,44 +79,77 @@ All construction and search work for O(n). For the suffix tree implementation th
 
 # Some benches *(thank [Criterion](https://github.com/bheisler/criterion.rs))*
 
-* ### *Suffix array to lcp*
-        time:   [433.13 us 434.87 us 436.63 us]
+* ### *sufix_array\<usize>.lcp()*
+        time:   [401.96 us 403.67 us 405.75 us]
 
-* ### *Suffix array build*
-        time:   [2.3837 ms 2.4029 ms 2.4232 ms]
+* ### *sufix_array\<u32>.lcp()*
+        time:   [371.61 us 373.21 us 375.08 us]
 
-* ### *Suffix array build stack*
-        time:   [2.4006 ms 2.4161 ms 2.4321 ms]
+* ### *SuffixArray::\<usize>::new(LINE)*
+        time:   [2.2718 ms 2.2871 ms 2.3069 ms]
 
-* ### *Suffix array find O(|find| * log(|word|))*
-        time:   [4.0171 us 4.0439 us 4.0721 us]
+* ### *SuffixArray::\<u32>::new(LINE)*
+        time:   [2.0291 ms 2.0368 ms 2.0456 ms]
 
-* ### *Suffix array find all O(|find| * log(|word|))*
-        time:   [4.0105 us 4.0350 us 4.0611 us]
+* ### *SuffixArray::\<usize>::new_stack(LINE)*
+        time:   [2.3389 ms 2.3777 ms 2.4314 ms]
 
-* ### *Suffix array find O(|word|)*
-        time:   [20.475 us 20.869 us 21.263 us]
+* ### *SuffixArray::\<u32>::new_stack(LINE)*
+        time:   [2.0221 ms 2.0310 ms 2.0405 ms]
 
-* ### *Suffix array find all O(|word|)*
-        time:   [19.867 us 20.178 us 20.522 us]
+* ### *suffix_array\<usize>.find(FIND) ~ O(|find| * log(|word|))*
+        time:   [4.1127 us 4.1273 us 4.1415 us]
 
-* ### *Suffix array to suffix tree build*
-        time:   [13.355 ms 13.496 ms 13.643 ms]
+* ### *suffix_array\<u32>.find(FIND) ~ O(|find| * log(|word|))*
+        time:   [4.1591 us 4.1695 us 4.1808 us]
+
+* ### *suffix_array\<usize>.find_all(FIND) ~ O(|find| * log(|word|))*
+        time:   [4.1205 us 4.1366 us 4.1528 us]
+
+* ### *suffix_array\<u32>.find_all(FIND) ~ O(|find| * log(|word|))*
+        time:   [4.1452 us 4.1560 us 4.1678 us]
+
+* ### *suffix_array\<usize>.find_big(FIND) ~ O(|word|)*
+        time:   [22.410 us 22.507 us 22.607 us]
+
+* ### *suffix_array\<u32>.find_big(FIND) ~ O(|word|)*
+        time:   [19.944 us 20.299 us 20.752 us]
+
+* ### *suffix_array\<usize>.find_big_all(FIND) ~ O(|word|)*
+        time:   [22.613 us 22.715 us 22.820 us]
+
+* ### *suffix_array\<u32>.find_big_all(FIND) ~ O(|word|)*
+        time:   [19.946 us 20.283 us 20.672 us]
+
+* ### *SuffixTree::from(suffix_array)*
+        time:   [13.533 ms 13.666 ms 13.812 ms]
 
 * ### *Suffix tree build Ukkonen*
-        time:   [15.570 ms 15.723 ms 15.887 ms]
+        time:   [15.316 ms 15.433 ms 15.558 ms]
 
 * ### *Suffix tree find*
-        time:   [23.576 us 23.771 us 23.973 us]
+        time:   [20.506 us 20.839 us 21.221 us]
 
-* ### *Suffix tree to suffix array rec build*
-        time:   [16.351 ms 16.479 ms 16.617 ms]
+* ### *SuffixArray::\<usize>::from_rec(suffix_tree)*
+        time:   [16.392 ms 16.494 ms 16.602 ms]
 
-* ### *Suffix tree to suffix array stack build*
-        time:   [16.209 ms 16.326 ms 16.446 ms]
+* ### *SuffixArray::\<u32>::from_rec(suffix_tree)*
+        time:   [16.310 ms 16.411 ms 16.516 ms]
 
-* ### *Suffix tree to lcp rec*
-        time:   [6.3750 ms 6.4100 ms 6.4482 ms]
+* ### *SuffixArray::\<usize>::from_stack(suffix_tree)*
+        time:   [16.084 ms 16.210 ms 16.348 ms]
 
-* ### *Suffix tree to lcp stack*
-        time:   [5.9856 ms 6.0216 ms 6.0601 ms]
+* ### *SuffixArray::\<u32>::from_stack(suffix_tree)*
+        time:   [16.150 ms 16.260 ms 16.374 ms]
+
+* ### *suffix_tree.lcp_rec::\<usize>()*
+        time:   [6.7994 ms 6.8324 ms 6.8688 ms]
+
+* ### *suffix_tree.lcp_rec::\<u32>()*
+        time:   [6.5991 ms 6.6267 ms 6.6577 ms]
+
+* ### *suffix_tree.lcp_stack::\<usize>()*
+        time:   [6.2382 ms 6.2643 ms 6.2934 ms]
+
+* ### *suffix_tree.lcp_stack::\<u32>()*
+        time:   [6.2558 ms 6.2853 ms 6.3185 ms]

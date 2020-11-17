@@ -3,12 +3,13 @@
 use core::slice::{Iter, SliceIndex};
 use core::ops::Index;
 use alloc::vec::Vec;
+use crate::array::build_suffix_array::SaType;
 
 #[derive(Debug, Clone)]
-pub struct LCP(Vec<usize>);
-impl LCP {
+pub struct LCP<T: SaType<T>>(Vec<T>);
+impl<T: SaType<T>> LCP<T> {
 
-    pub(crate) fn new(lcp: Vec<usize>) -> Self {
+    pub(crate) fn new(lcp: Vec<T>) -> Self {
         Self(lcp)
     }
 
@@ -16,12 +17,12 @@ impl LCP {
     /// ```
     /// use suff_collections::{array::*, lcp::*};
     ///
-    /// let sa = SuffixArray::new("word");
+    /// let sa = SuffixArray::<usize>::new("word");
     /// let lcp = sa.lcp();
     /// let inner_lcp: &[usize] = lcp.inner();
     /// ```
     #[inline]
-    pub fn inner(&self) -> &[usize] {
+    pub fn inner(&self) -> &[T] {
         &self.0
     }
 
@@ -29,13 +30,13 @@ impl LCP {
     /// ```
     /// use suff_collections::{array::*, lcp::*};
     ///
-    /// let sa = SuffixArray::new("word");
+    /// let sa = SuffixArray::<usize>::new("word");
     /// let lcp = sa.lcp();
     /// let inner_lcp: Vec<usize> = lcp.owned();
     /// // lcp not valid
     /// ```
     #[inline]
-    pub fn owned(self) -> Vec<usize> {
+    pub fn owned(self) -> Vec<T> {
         self.0
     }
 
@@ -43,12 +44,12 @@ impl LCP {
     /// ```
     /// use suff_collections::{array::*, lcp::*};
     ///
-    /// let sa = SuffixArray::new("word");
+    /// let sa = SuffixArray::<usize>::new("word");
     /// let lcp = sa.lcp();
     /// let copy = lcp.iter().map(|&x| x).collect::<Vec<_>>();
     /// ```
     #[inline]
-    pub fn iter(&self) -> Iter<'_, usize> {
+    pub fn iter(&self) -> Iter<'_, T> {
         self.0.iter()
     }
 
@@ -56,7 +57,7 @@ impl LCP {
     /// ```
     /// use suff_collections::{array::*, lcp::*};
     ///
-    /// let sa = SuffixArray::new("word");
+    /// let sa = SuffixArray::<usize>::new("word");
     /// let lcp_len: usize = sa.lcp().len();
     /// assert_eq!("word\0".len(), lcp_len);
     /// ```
@@ -69,35 +70,35 @@ impl LCP {
     /// ```
     /// use suff_collections::{array::*, lcp::*};
     ///
-    /// let sa = SuffixArray::new("word");
+    /// let sa = SuffixArray::<usize>::new("word");
     /// let lcp = sa.lcp();
     /// // safe because "word".len() >= 0
     /// let len = unsafe { lcp.idx(0) };
     /// ```
     #[cfg(debug_assertions)]
     #[inline]
-    pub unsafe fn idx<I: SliceIndex<[usize]>>(&self, index: I) -> &I::Output {
+    pub unsafe fn idx<I: SliceIndex<[T]>>(&self, index: I) -> &I::Output {
         &self.0[index]
     }
     #[cfg(not(debug_assertions))]
     #[inline]
-    pub unsafe fn idx<I: SliceIndex<[usize]>>(&self, index: I) -> &I::Output {
+    pub unsafe fn idx<I: SliceIndex<[T]>>(&self, index: I) -> &I::Output {
         self.0.get_unchecked(index)
     }
 
     #[cfg(debug_assertions)]
     #[inline]
-    pub(crate) unsafe fn idx_mut<I: SliceIndex<[usize]>>(&mut self, index: I) -> &mut I::Output {
+    pub(crate) unsafe fn idx_mut<I: SliceIndex<[T]>>(&mut self, index: I) -> &mut I::Output {
         &mut self.0[index]
     }
     #[cfg(not(debug_assertions))]
     #[inline]
-    pub(crate) unsafe fn idx_mut<I: SliceIndex<[usize]>>(&mut self, index: I) -> &mut I::Output {
+    pub(crate) unsafe fn idx_mut<I: SliceIndex<[T]>>(&mut self, index: I) -> &mut I::Output {
         self.0.get_unchecked_mut(index)
     }
 }
 
-impl<I: SliceIndex<[usize]>> Index<I> for LCP {
+impl<T: SaType<T>, I: SliceIndex<[T]>> Index<I> for LCP<T> {
     type Output = I::Output;
 
     #[inline]

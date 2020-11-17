@@ -1,9 +1,9 @@
 [package]
 name = "suff_collections"
-version = "0.1.3"
+version = "1.0.0"
 authors = ["mov-rax-rbx"]
 edition = "2018"
-keywords = ["suffix", "suffix_array", "suffix_tree", "text", "string"]
+keywords = ["suffix", "suffix_array", "suffix_tree", "text", "no_std"]
 categories = ["data-structures"]
 description = "Fast realization of suffix array and suffix tree"
 readme = "README.md"

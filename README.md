@@ -1,5 +1,9 @@
 # Suffix Collections
 
+![Rust](https://github.com/mov-rax-rbx/Suffix-Collections/workflows/Rust/badge.svg)
+![Rust](https://img.shields.io/crates/l/suff_collections)
+![Rust](https://img.shields.io/crates/v/suff_collections)
+
 Fast realization of suffix array and suffix tree for substring search, longest common prefix array (lcp array).
 
 ## Example

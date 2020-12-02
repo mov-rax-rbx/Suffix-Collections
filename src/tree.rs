@@ -42,6 +42,7 @@ use core::fmt;
 use crate::{array::*, array::build_suffix_array::SaType, lcp::*, canonic_word};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(transparent)]
 pub struct NodeIdx(usize);
 impl NodeIdx {
     /// Return node index

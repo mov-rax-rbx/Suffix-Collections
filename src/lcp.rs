@@ -6,6 +6,7 @@ use alloc::vec::Vec;
 use crate::array::build_suffix_array::SaType;
 
 #[derive(Debug, Clone)]
+#[repr(transparent)]
 pub struct LCP<T: SaType<T>>(Vec<T>);
 impl<T: SaType<T>> LCP<T> {
 

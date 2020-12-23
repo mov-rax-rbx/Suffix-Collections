@@ -306,7 +306,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
         &self.word
     }
 
-    /// lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+    /// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) && lcp.len() == sa.len()
     /// Construct LCP. Complexity O(n)
     /// ```
     /// use suff_collections::array::*;

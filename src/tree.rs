@@ -36,8 +36,7 @@
 
 use alloc::collections::BTreeMap;
 use alloc::{vec::Vec, borrow::Cow, borrow::ToOwned};
-use core::{format_args, str, option::Option};
-use core::fmt;
+use core::{fmt, format_args, str, option::Option};
 
 use crate::{array::*, array::build_suffix_array::SaType, lcp::*, canonic_word};
 
@@ -159,7 +158,7 @@ struct State {
     edge_pos: usize,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SuffixTree<'t> {
     word: Cow<'t, str>,
     v: Vec<Node>,
@@ -333,7 +332,7 @@ impl<'t> SuffixTree<'t> {
         }
     }
 
-    /// lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+    /// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1]\) && lcp.len() == sa.len()
     /// Construct LCP not recursive. Complexity O(n)
     /// ```
     /// use suff_collections::tree::*;
@@ -390,7 +389,7 @@ impl<'t> SuffixTree<'t> {
         }
     }
 
-    /// lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+    /// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) && lcp.len() == sa.len()
     /// Construct LCP recursive. Complexity O(n)
     /// ```
     /// use suff_collections::tree::*;

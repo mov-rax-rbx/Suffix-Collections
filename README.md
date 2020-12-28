@@ -3,6 +3,7 @@
 ![Build Status](https://github.com/mov-rax-rbx/Suffix-Collections/workflows/Rust/badge.svg)
 [![LICENSE](https://img.shields.io/crates/l/suff_collections)](LICENSE)
 [![Crates](https://img.shields.io/crates/v/suff_collections)](https://crates.io/crates/suff_collections)
+[![Documentation](https://docs.rs/suff_collections/badge.svg)](https://docs.rs/suff_collections)
 
 Fast realization of suffix array and suffix tree for substring search, longest common prefix array (lcp array).
 

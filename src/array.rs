@@ -96,7 +96,7 @@ impl<'sa, T: SaType<T>> IntoIterator for &'sa SuffixArray<'sa, T> {
 }
 
 impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
-    const BYTE_SIZE: usize = 256;
+    const DICT_SIZE: usize = 256;
 
     /// Construct suffix array recursive. Complexity O(n).
     /// Uses less memory to build than `new` by using bitpcking.
@@ -124,7 +124,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
         let word = canonic_word(word);
         let mut offset_dict = vec![
             (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::BYTE_SIZE)
+            max(word.len(), SuffixArray::<T>::DICT_SIZE)
         ];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
@@ -186,7 +186,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
         let word = canonic_word(word);
         let mut offset_dict = vec![
             (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::BYTE_SIZE)
+            max(word.len(), SuffixArray::<T>::DICT_SIZE)
         ];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
@@ -246,7 +246,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
         let word = canonic_word(word);
         let mut offset_dict = vec![
             (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::BYTE_SIZE)
+            max(word.len(), SuffixArray::<T>::DICT_SIZE)
         ];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
@@ -307,7 +307,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
         let word = canonic_word(word);
         let mut offset_dict = vec![
             (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::BYTE_SIZE)
+            max(word.len(), SuffixArray::<T>::DICT_SIZE)
         ];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
@@ -892,14 +892,14 @@ pub(crate) mod build_suffix_array {
     #[inline]
     unsafe fn calc_type<T: Ord>(s_idx: &[T]) -> Vec<TSuff> {
         let mut t = vec![TSuff::S; s_idx.len()];
-        for i in (0..s_idx.len() - 1).rev() {
-            // safe 0 < i + 1 < s_idx.len() && t.len() == s_idx_len()
-            if *s_idx.get_unchecked(i) > *s_idx.get_unchecked(i + 1) {
-                *t.get_unchecked_mut(i) = TSuff::L;
-            } else if *s_idx.get_unchecked(i) == *s_idx.get_unchecked(i + 1) {
-                *t.get_unchecked_mut(i) = *t.get_unchecked(i + 1);
-            }
-        }
+        s_idx.windows(2).rev().zip((0..s_idx.len() - 1).into_iter().rev())
+            .for_each(|(s_idx, i)| {
+                if s_idx[0] > s_idx[1] {
+                    *t.get_unchecked_mut(i) = TSuff::L;
+                } else if s_idx[0] == s_idx[1] {
+                    *t.get_unchecked_mut(i) = *t.get_unchecked(i + 1);
+                }
+        });
         t
     }
     #[inline]

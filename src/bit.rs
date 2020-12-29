@@ -105,10 +105,12 @@ impl<'b> Bit for BitArrMut<'b> {
     }
 }
 
+#[inline]
 fn hi(n: usize) -> usize {
     n >> Byte::LOG2
 }
 
+#[inline]
 fn lo(n: usize) -> usize {
     n & Byte::MASK
 }

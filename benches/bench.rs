@@ -92,9 +92,21 @@ fn my_suffix_array_build_usize(c: &mut Criterion) {
     }));
 }
 
+fn my_suffix_array_compress_build_usize(c: &mut Criterion) {
+    c.bench_function("SuffixArray::<usize>::new_compress(LINE)", |b| b.iter(|| {
+        let _ = SuffixArray::<usize>::new_compress(LINE);
+    }));
+}
+
 fn my_suffix_array_build_u32(c: &mut Criterion) {
     c.bench_function("SuffixArray::<u32>::new(LINE)", |b| b.iter(|| {
         let _ = SuffixArray::<u32>::new(LINE);
+    }));
+}
+
+fn my_suffix_array_compress_build_u32(c: &mut Criterion) {
+    c.bench_function("SuffixArray::<u32>::new_compress(LINE)", |b| b.iter(|| {
+        let _ = SuffixArray::<u32>::new_compress(LINE);
     }));
 }
 
@@ -104,9 +116,21 @@ fn my_suffix_array_stack_build_usize(c: &mut Criterion) {
     }));
 }
 
+fn my_suffix_array_compress_stack_build_usize(c: &mut Criterion) {
+    c.bench_function("SuffixArray::<usize>::new_stack_compress(LINE)", |b| b.iter(|| {
+        let _ = SuffixArray::<usize>::new_stack_compress(LINE);
+    }));
+}
+
 fn my_suffix_array_stack_build_u32(c: &mut Criterion) {
     c.bench_function("SuffixArray::<u32>::new_stack(LINE)", |b| b.iter(|| {
         let _ = SuffixArray::<u32>::new_stack(LINE);
+    }));
+}
+
+fn my_suffix_array_compress_stack_build_u32(c: &mut Criterion) {
+    c.bench_function("SuffixArray::<u32>::new_stack_compress(LINE)", |b| b.iter(|| {
+        let _ = SuffixArray::<u32>::new_stack_compress(LINE);
     }));
 }
 
@@ -188,9 +212,13 @@ criterion_group!(benches,
     my_suffix_array_to_lcp_usize,
     my_suffix_array_to_lcp_u32,
     my_suffix_array_build_usize,
+    my_suffix_array_compress_build_usize,
     my_suffix_array_build_u32,
+    my_suffix_array_compress_build_u32,
     my_suffix_array_stack_build_usize,
+    my_suffix_array_compress_stack_build_usize,
     my_suffix_array_stack_build_u32,
+    my_suffix_array_compress_stack_build_u32,
     my_suffix_array_find_usize,
     my_suffix_array_find_u32,
     my_suffix_array_find_all_usize,

@@ -86,6 +86,8 @@ pub mod tree;
 pub mod array;
 pub mod lcp;
 
+pub(crate) mod bit;
+
 
 use alloc::borrow::{Cow, ToOwned};
 use alloc::vec::Vec;

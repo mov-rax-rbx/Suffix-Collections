@@ -1,6 +1,6 @@
 [package]
 name = "suff_collections"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["mov-rax-rbx"]
 edition = "2018"
 keywords = ["suffix", "suffix_array", "suffix_tree", "text", "no_std"]

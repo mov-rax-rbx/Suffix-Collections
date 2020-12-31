@@ -93,14 +93,26 @@ All construction and search work for O(n). For the suffix tree implementation th
 * ### *SuffixArray::\<usize>::new(LINE)*
         time:   [2.2718 ms 2.2871 ms 2.3069 ms]
 
+* ### *SuffixArray::\<usize>::new_compress(LINE)*
+        time:   [2.5368 ms 2.5529 ms 2.5703 ms]
+
 * ### *SuffixArray::\<u32>::new(LINE)*
-        time:   [2.0291 ms 2.0368 ms 2.0456 ms]
+        time:   [1.9684 ms 1.9752 ms 1.9828 ms]
+
+* ### *SuffixArray::\<u32>::new_compress(LINE)*
+        time:   [2.2396 ms 2.2533 ms 2.2697 ms]
 
 * ### *SuffixArray::\<usize>::new_stack(LINE)*
         time:   [2.3389 ms 2.3777 ms 2.4314 ms]
 
+* ### *SuffixArray::\<usize>::new_stack_compress(LINE)*
+        time:   [2.6015 ms 2.6166 ms 2.6327 ms]
+
 * ### *SuffixArray::\<u32>::new_stack(LINE)*
         time:   [2.0221 ms 2.0310 ms 2.0405 ms]
+
+* ### *SuffixArray::\<u32>::new_stack_compress(LINE)*
+        time:   [2.2962 ms 2.3078 ms 2.3210 ms]
 
 * ### *suffix_array\<usize>.find(FIND) ~ O(|find| * log(|word|))*
         time:   [4.1127 us 4.1273 us 4.1415 us]

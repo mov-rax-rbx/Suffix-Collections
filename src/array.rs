@@ -958,14 +958,14 @@ pub(crate) mod build_suffix_array {
     #[inline]
     unsafe fn create_new_str<T: Ord, Scalar: SaType<Scalar>>(
         s_idx: &[T],
-        offset_dict: &mut [(Scalar, Scalar)],
+        alphabet: &mut [Scalar],
         sort_sublms: &[Scalar],
         t: &impl Bit,
         idx_lms: &[Scalar],
     ) -> Vec<Scalar> {
         let mut prev = Scalar::try_from(s_idx.len()).ok().unwrap() - Scalar::one();
-        // safe prev < offset_dict.len() && s_idx.len() <= offset_dict.len()
-        offset_dict.get_unchecked_mut(prev.to_usize()).0 = Scalar::zero();
+        // safe prev < alphabet.len() && s_idx.len() <= alphabet.len()
+        *alphabet.get_unchecked_mut(prev.to_usize()) = Scalar::zero();
         let sorted_lms = sort_sublms.iter().skip(1).filter(|&&x|
             // safe 0 < x < sort_sublms.len() && max(sa) < x.len() (sa contains sort sumlms => max(sa) == max(idx_lms))
             x > Scalar::zero()
@@ -973,19 +973,19 @@ pub(crate) mod build_suffix_array {
             && t.get_unchecked((x - Scalar::one()).to_usize()) == TSuff::L as u8
         );
         for &x in sorted_lms {
-            // safe x < offset_dict.len() && sorted_lms == sa &&
-            // sort_sublms.len() == s_idx.len() && s_idx.len() <= offset_dict.len()
+            // safe x < alphabet.len() && sorted_lms == sa &&
+            // sort_sublms.len() == s_idx.len() && s_idx.len() <= alphabet.len()
             // range(prev) == range(x)
             if sublms_is_eq(&s_idx, t, x.to_usize(), prev.to_usize()) {
-                offset_dict.get_unchecked_mut(x.to_usize()).0 = offset_dict.get_unchecked(prev.to_usize()).0
+                *alphabet.get_unchecked_mut(x.to_usize()) = *alphabet.get_unchecked(prev.to_usize())
             } else {
-                offset_dict.get_unchecked_mut(x.to_usize()).0 =
-                    offset_dict.get_unchecked(prev.to_usize()).0 + Scalar::one()
+                *alphabet.get_unchecked_mut(x.to_usize()) =
+                    *alphabet.get_unchecked(prev.to_usize()) + Scalar::one()
             }
             prev = x;
         }
-        // safe max(idx_lms) < s_idx.len() && s_idx.len() <= offset_dict.len()
-        idx_lms.iter().map(|&x| offset_dict.get_unchecked(x.to_usize()).0).collect()
+        // safe max(idx_lms) < s_idx.len() && s_idx.len() <= alphabet.len()
+        idx_lms.iter().map(|&x| *alphabet.get_unchecked(x.to_usize())).collect()
     }
     #[inline]
     unsafe fn pack_lms<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
@@ -1073,7 +1073,7 @@ pub(crate) mod build_suffix_array {
         } else if idx_lms.len() > 1 {
             clear(offset_dict);
             induced_sort(s_idx, idx_lms, t, offset_dict, tmp_end_s, sa, sa_init);
-            let new_s_idx = create_new_str(s_idx, offset_dict, sa, t, idx_lms);
+            let new_s_idx = create_new_str(s_idx, tmp_end_s, sa, t, idx_lms);
 
             sa_init.clear();
             clear(offset_dict);
@@ -1170,7 +1170,7 @@ pub(crate) mod build_suffix_array {
             } else if idx_lms.len() > 1 {
                 clear(offset_dict);
                 induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-                let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
+                let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
 
                 sa_init.clear();
                 clear(offset_dict);
@@ -1262,7 +1262,7 @@ pub(crate) mod build_suffix_array {
                                 induced_sort(&s_idx, &idx_lms, &t, offset_dict,
                                     tmp_end_s.get_unchecked_mut(..size),
                                     sa, sa_init);
-                                let new_s_idx = create_new_str(&s_idx, offset_dict, sa, &t, &idx_lms);
+                                let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
 
                                 sa_init.clear();
                                 clear(offset_dict);

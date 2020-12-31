@@ -1113,7 +1113,6 @@ pub(crate) mod build_suffix_array {
         induced_sort(s_idx, &sa_lms, t, offset_dict, tmp_end_s, sa, sa_init);
     }
 
-    #[derive(Debug)]
     enum TState<Scalar: SaType<Scalar>> {
         Rec (
             Vec<Scalar>,

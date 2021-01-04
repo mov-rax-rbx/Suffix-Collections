@@ -36,7 +36,16 @@ Fast realization of suffix array and suffix tree for substring search, longest c
      // let sa = SuffixArray::<u32>::from_stack(st);
      // let sa = SuffixArray::<usize>::from_stack(st);
      let sa = SuffixArray::<usize>::from_rec(st);
+
+     let mut buff = String::new();
+     SuffixTree::new("mississippi")
+        .to_graphviz(&mut buff).unwrap();
+     println!("{}", &buff);
 ```
+SuffixTree for the word "mississippi"
+
+![](img/suffix_tree_mississippi.svg)
+
 
 * **SuffixArray**
 ```rust
@@ -75,7 +84,39 @@ Fast realization of suffix array and suffix tree for substring search, longest c
 
      // convert suffix array to suffix tree
      let st = SuffixTree::from(sa);
+
+     let word = "mississippi";
+     let sa = SuffixArray::<u32>::new(word);
+     let lcp = sa.lcp();
+     println!("LCP    index    suffixe's");
+     sa.iter().zip(lcp.iter()).for_each(|(&sa, &lcp)| {
+            let suff = String::from_utf8(
+                word.as_bytes()[sa as usize..]
+                .iter().map(|&x|).collect::<Vec<_>>()
+            ).unwrap();
+            println!("{}    {}    {}", lcp, sa, suff);
+         }
+     );
 ```
+
+SuffixArray and lcp for the word "mississippi"
+
+```
+LCP    index    suffixe's
+0      11
+0      10       i
+1      7        ippi
+1      4        issippi
+4      1        ississippi
+0      0        mississippi
+0      9        pi
+1      8        ppi
+0      6        sippi
+2      3        sissippi
+1      5        ssippi
+3      2        ssissippi
+```
+
 All construction and search work for O(n). For the suffix tree implementation the [Ukkonen algorithm][2] is taken and for the suffix array implementation the [SA-IS algorithm][1] is taken.
 
 [1]: https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail

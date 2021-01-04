@@ -309,17 +309,17 @@ fn test_to_suffix_tree_3() {
 
 #[test]
 fn test_to_suffix_tree_4() {
-    let line = "I'll make the big change. First of all though, I've got to get up, my train leaves at five.\" 
-    And he looked over at the alarm clock, ticking on the chest of drawers. \"God in Heaven!\" he thought. It was 
-    half past six and the hands were quietly moving forwards, it was even later than half past, more like quarter to 
-    seven. Had the alarm clock not rung? He could see from the bed that it had been set for four o'clock as it should 
-    have been; it certainly must have rung. Yes, but was it possible to quietly sleep through that furniture-rattling 
-    noise? True, he had not slept peacefully, but probably all the more deeply because of that. What should he do now? 
-    The next train went at seven; if he were to catch that he would have to rush like mad and the collection of samples 
-    was still not packed, and he did not at all feel particularly fresh and lively. And even if he did catch the train 
-    he would not avoid his boss's anger as the office assistant would have been there to see the five o'clock train go, 
-    he would have put in his report about Gregor's not being there a long time ago. The office assistant was the boss's 
-    man, spineless, and with no understanding. What about if he reported sick? But that would be extremely strained and 
+    let line = "I'll make the big change. First of all though, I've got to get up, my train leaves at five.\"
+    And he looked over at the alarm clock, ticking on the chest of drawers. \"God in Heaven!\" he thought. It was
+    half past six and the hands were quietly moving forwards, it was even later than half past, more like quarter to
+    seven. Had the alarm clock not rung? He could see from the bed that it had been set for four o'clock as it should
+    have been; it certainly must have rung. Yes, but was it possible to quietly sleep through that furniture-rattling
+    noise? True, he had not slept peacefully, but probably all the more deeply because of that. What should he do now?
+    The next train went at seven; if he were to catch that he would have to rush like mad and the collection of samples
+    was still not packed, and he did not at all feel particularly fresh and lively. And even if he did catch the train
+    he would not avoid his boss's anger as the office assistant would have been there to see the five o'clock train go,
+    he would have put in his report about Gregor's not being there a long time ago. The office assistant was the boss's
+    man, spineless, and with no understanding. What about if he reported sick? But that would be extremely strained and
     suspicious as in fifteen years of service Gregor had never once yet been ill. H";
 
     let res = SuffixArray::<usize>::from_stack(
@@ -507,7 +507,7 @@ fn test_suffix_array_stack_4() {
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
     aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
-    
+
     let res = SuffixArray::<usize>::new_stack(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
 }
@@ -569,7 +569,7 @@ fn test_suffix_array_stack_compress_4() {
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
     aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
-    
+
     let res = SuffixArray::<usize>::new_stack_compress(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
 }

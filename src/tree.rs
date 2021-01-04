@@ -425,7 +425,8 @@ impl<'t> SuffixTree<'t> {
     pub fn to_graphviz(&self, f: &mut impl fmt::Write) -> fmt::Result {
         assert!(self.word.is_ascii());
         let size = (self.v.len() as f64 * 0.5) as u64;
-        f.write_fmt(format_args!("    size=\"{}, {}\"", size, size))?;
+        f.write_str("digraph G {\n")?;
+        f.write_fmt(format_args!("    size=\"{}, {}\"\n", size, size))?;
         for (i, x) in self.v.iter().enumerate() {
             let node_name = &self.word[x.pos..x.pos + x.len];
             let child = &x.children;
@@ -435,7 +436,7 @@ impl<'t> SuffixTree<'t> {
                 let label_name = self.word.as_bytes()[start] as char;
                 let children_name = &self.word[start..end];
                 f.write_fmt(
-                    format_args!("    _{}_{} -> _{}_{} [byte_label=\"_{}_{}\\npos: {}, len: {}\"]",
+                    format_args!("    _{}_{} -> _{}_{} [byte_label=\"_{}_{}\\npos: {}, len: {}\"]\n",
                     i, node_name, node_idx.unwrap(), children_name, node_idx.unwrap(), label_name, start, end - start)
                 )?;
             }
@@ -445,13 +446,13 @@ impl<'t> SuffixTree<'t> {
                     let end = start + self.node(link_idx).len;
                     let link_name = &self.word[start..end];
                     f.write_fmt(
-                        format_args!("    _{}_{} -> _{}_{} [style=dotted]", i, node_name, link_idx.unwrap(), link_name)
+                        format_args!("    _{}_{} -> _{}_{} [style=dotted]\n", i, node_name, link_idx.unwrap(), link_name)
                     )?;
                 }
                 None => (),
             }
         }
-        f.write_str("}}")?;
+        f.write_str("}")?;
         Ok(())
     }
 
@@ -718,7 +719,7 @@ impl<'t> SuffixTree<'t> {
         {
             edge_pos += 1;
             *curr_pos += 1;
-        } 
+        }
         Some((end_edge_pos, edge_pos))
     }
 }

@@ -50,7 +50,7 @@ pub(crate) struct BitArrMut<'b>(pub(crate) &'b mut [Byte]);
 impl<'b> BitMut for BitArrMut<'b> {
     #[inline]
     unsafe fn range_to_mut(&mut self, end: usize) -> Self {
-        debug_assert!(hi(end) + if lo(end) == 0 { 0 } else { 1 } < self.0.len());
+        debug_assert!(hi(end) + if lo(end) == 0 { 0 } else { 1 } <= self.0.len());
         // safe cast because Rust can't deduce that we won't return multiple references to the same value
         Self(&mut *(self.0.get_unchecked_mut(..hi(end) + if lo(end) == 0 { 0 } else { 1 }) as *mut _))
     }

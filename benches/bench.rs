@@ -209,12 +209,12 @@ fn my_suffix_tree_find(c: &mut Criterion) {
 
 
 criterion_group!(benches,
-    my_suffix_array_to_lcp_usize,
-    my_suffix_array_to_lcp_u32,
+    // my_suffix_array_to_lcp_usize,
+    // my_suffix_array_to_lcp_u32,
     my_suffix_array_build_usize,
-    my_suffix_array_compress_build_usize,
-    my_suffix_array_build_u32,
-    my_suffix_array_compress_build_u32,
+    // my_suffix_array_compress_build_usize,
+    // my_suffix_array_build_u32,
+    // my_suffix_array_compress_build_u32,
     my_suffix_array_stack_build_usize,
     my_suffix_array_compress_stack_build_usize,
     my_suffix_array_stack_build_u32,

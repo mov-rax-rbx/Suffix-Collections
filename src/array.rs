@@ -1116,18 +1116,15 @@ pub(crate) mod build_suffix_array {
     enum TState<Scalar: SaType<Scalar>> {
         Rec (
             Vec<Scalar>,
-            usize,
         ),
         RecEnd (
             Vec<Scalar>,
             Vec<Scalar>,
             Vec<Byte>,
-            usize,
         ),
         End (
             Vec<Scalar>,
             Vec<Byte>,
-            usize,
         ),
     }
 
@@ -1175,8 +1172,8 @@ pub(crate) mod build_suffix_array {
                 sa_init.clear();
                 clear(offset_dict);
 
-                let new_size = idx_lms.len();
-                state_stack.push(TState::Rec(new_s_idx, new_size));
+                debug_assert!(idx_lms.len() == new_s_idx.len());
+                state_stack.push(TState::Rec(new_s_idx));
                 (
                     suffix_array_stack_inner(offset_dict, tmp_end_s,
                         sa, sa_init, state_stack, ret_bytes, to_bits, to_bits_no_mut),
@@ -1226,9 +1223,9 @@ pub(crate) mod build_suffix_array {
                 None => return res_lms,
                 Some(state) => {
                     match state {
-                        TState::Rec(s_idx, size) => {
+                        TState::Rec(s_idx) => {
                             // safe size < offset_dict.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
+                            let offset_dict = offset_dict.get_unchecked_mut(..s_idx.len());
                             // safe s_idx.len() <= sa.len()
                             let sa = sa.get_unchecked_mut(..s_idx.len());
                             // safe s_idx.len() <= sa_init.len()
@@ -1245,38 +1242,38 @@ pub(crate) mod build_suffix_array {
                                 // safe we have sentinel => \0
                                 res_lms = vec![*idx_lms.get_unchecked(0)];
 
-                                state_stack.push(TState::End(s_idx, slice, size));
+                                state_stack.push(TState::End(s_idx, slice));
                             } else if lms_is_unique(offset_dict) {
                                 res_lms = unpack_lms(&idx_lms, offset_dict);
 
-                                state_stack.push(TState::End(s_idx, slice, size));
+                                state_stack.push(TState::End(s_idx, slice));
                             } else if idx_lms.len() <= LEN_NAIVE_SORT {
                                 let mut sort_lms = idx_lms.clone().to_vec();
                                 // safe because max(idx_lms) < s_idx.len()
                                 naive_sort(&mut sort_lms, &s_idx);
                                 res_lms = sort_lms;
-                                state_stack.push(TState::End(s_idx, slice, size));
+                                state_stack.push(TState::End(s_idx, slice));
                             } else if idx_lms.len() > 1 {
                                 clear(offset_dict);
                                 // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
                                 induced_sort(&s_idx, &idx_lms, &t, offset_dict,
-                                    tmp_end_s.get_unchecked_mut(..size),
+                                    tmp_end_s.get_unchecked_mut(..s_idx.len()),
                                     sa, sa_init);
                                 let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
 
                                 sa_init.clear();
                                 clear(offset_dict);
 
-                                let new_size = idx_lms.len();
-                                state_stack.push(TState::RecEnd(s_idx, idx_lms, slice, size));
-                                state_stack.push(TState::Rec(new_s_idx, new_size));
+                                debug_assert!(idx_lms.len() == new_s_idx.len());
+                                state_stack.push(TState::RecEnd(s_idx, idx_lms, slice));
+                                state_stack.push(TState::Rec(new_s_idx));
                             } else {
                                 unreachable!();
                             };
                         }
-                        TState::End(s_idx, t, size) => {
+                        TState::End(s_idx, t) => {
                             // safe size == idx_lms.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
+                            let offset_dict = offset_dict.get_unchecked_mut(..s_idx.len());
                             let sa = sa.get_unchecked_mut(..s_idx.len());
                             let mut sa_init = sa_init.range_to_mut(s_idx.len());
                             let t = to_bits_no_mut(&t);
@@ -1284,13 +1281,13 @@ pub(crate) mod build_suffix_array {
                             clear(offset_dict);
                             // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
                             induced_sort(&s_idx, &res_lms, &t, offset_dict,
-                                tmp_end_s.get_unchecked_mut(..size),
+                                tmp_end_s.get_unchecked_mut(..s_idx.len()),
                                 sa, &mut sa_init);
                             res_lms = Vec::from(sa);
                         }
-                        TState::RecEnd(s_idx, idx_lms, t, size) => {
+                        TState::RecEnd(s_idx, idx_lms, t) => {
                             // safe size == idx_lms.len()
-                            let offset_dict = offset_dict.get_unchecked_mut(..size);
+                            let offset_dict = offset_dict.get_unchecked_mut(..s_idx.len());
                             let sa = sa.get_unchecked_mut(..s_idx.len());
                             let mut sa_init = sa_init.range_to_mut(s_idx.len());
                             let t = to_bits_no_mut(&t);
@@ -1301,7 +1298,7 @@ pub(crate) mod build_suffix_array {
                                 res_lms.iter()
                                 .map(|&x| *idx_lms.get_unchecked(x.to_usize())).collect::<Vec<_>>();
                             induced_sort(&s_idx, &sa_lms, &t, offset_dict,
-                                tmp_end_s.get_unchecked_mut(..size),
+                                tmp_end_s.get_unchecked_mut(..s_idx.len()),
                                 sa, &mut sa_init);
                             res_lms = Vec::from(sa);
                         }

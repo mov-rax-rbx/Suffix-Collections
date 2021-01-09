@@ -512,7 +512,7 @@ impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
             }
             // safe max(sa_idx) < sa.len() && x < sa.len() by previous check
             // safe l < word.len() && r < word.len()
-            let l = unsafe { *self.sa.get_unchecked((x).to_usize() - 1) };
+            let l = unsafe { *self.sa.get_unchecked(x.to_usize() - 1) };
             let r = unsafe { *self.sa.get_unchecked(x.to_usize()) };
             pref_len = unsafe { count_eq(
                 word.get_unchecked(l.to_usize()..),

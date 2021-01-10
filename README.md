@@ -7,6 +7,9 @@
 
 Fast realization of suffix array and suffix tree for substring search, longest common prefix array (lcp array).
 
+## Unicode
+The current implementation builds suffix structures using bytes and does not decode the string before or during construction in Unicode. But if Unicode string is [normalized](https://unicode.org/reports/tr15) before construction and search, then structures support Unicode (because all byte sequences are decoded unambiguously). Also search and lcp returns indexes as in byte array but not in Unicode decoded string.
+
 ## Example
 * **SuffixTree**
 ```rust

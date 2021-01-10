@@ -1,15 +1,14 @@
 //! lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) and lcp.len() == sa.len()
 
-use core::slice::{Iter, SliceIndex};
-use core::ops::Index;
-use alloc::vec::Vec;
 use crate::array::build_suffix_array::SuffixIndices;
+use alloc::vec::Vec;
+use core::ops::Index;
+use core::slice::{Iter, SliceIndex};
 
 #[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct LCP<T: SuffixIndices<T>>(Vec<T>);
 impl<T: SuffixIndices<T>> LCP<T> {
-
     pub(crate) fn new(lcp: Vec<T>) -> Self {
         Self(lcp)
     }

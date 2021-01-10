@@ -1,6 +1,6 @@
-use suff_collections;
-use self::suff_collections::tree::*;
 use self::suff_collections::array::*;
+use self::suff_collections::tree::*;
+use suff_collections;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
@@ -11,204 +11,274 @@ const FIND: &str = "right up close because the boss is hard of hearing. Well, th
 
 fn my_suffix_array_to_suffix_tree_build(c: &mut Criterion) {
     let array = SuffixArray::<usize>::new(LINE);
-    c.bench_function("SuffixTree::from(suffix_array)", |b| b.iter(|| {
-        let _ = SuffixTree::from(array.clone());
-    }));
+    c.bench_function("SuffixTree::from(suffix_array)", |b| {
+        b.iter(|| {
+            let _ = SuffixTree::from(array.clone());
+        })
+    });
 }
 
 fn my_suffix_tree_to_suffix_array_rec_build_usize(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("SuffixArray::<usize>::from_rec(suffix_tree)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::from_rec(tree.clone());
-    }));
+    c.bench_function("SuffixArray::<usize>::from_rec(suffix_tree)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::from_rec(tree.clone());
+        })
+    });
 }
 
 fn my_suffix_tree_to_suffix_array_rec_build_u32(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("SuffixArray::<u32>::from_rec(suffix_tree)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::from_rec(tree.clone());
-    }));
+    c.bench_function("SuffixArray::<u32>::from_rec(suffix_tree)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::from_rec(tree.clone());
+        })
+    });
 }
 
 fn my_suffix_tree_to_suffix_array_stack_build_usize(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("SuffixArray::<usize>::from_stack(suffix_tree)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::from_stack(tree.clone());
-    }));
+    c.bench_function("SuffixArray::<usize>::from_stack(suffix_tree)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::from_stack(tree.clone());
+        })
+    });
 }
 
 fn my_suffix_tree_to_suffix_array_stack_build_u32(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("SuffixArray::<u32>::from_stack(suffix_tree)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::from_stack(tree.clone());
-    }));
+    c.bench_function("SuffixArray::<u32>::from_stack(suffix_tree)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::from_stack(tree.clone());
+        })
+    });
 }
 
 fn my_suffix_tree_to_lcp_rec_usize(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("suffix_tree.lcp_rec::<usize>()", |b| b.iter(|| {
-        let _ = tree.lcp_rec::<usize>();
-    }));
+    c.bench_function("suffix_tree.lcp_rec::<usize>()", |b| {
+        b.iter(|| {
+            let _ = tree.lcp_rec::<usize>();
+        })
+    });
 }
 
 fn my_suffix_tree_to_lcp_rec_u32(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("suffix_tree.lcp_rec::<u32>()", |b| b.iter(|| {
-        let _ = tree.lcp_rec::<u32>();
-    }));
+    c.bench_function("suffix_tree.lcp_rec::<u32>()", |b| {
+        b.iter(|| {
+            let _ = tree.lcp_rec::<u32>();
+        })
+    });
 }
 
 fn my_suffix_tree_to_lcp_stack_usize(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("suffix_tree.lcp_stack::<usize>()", |b| b.iter(|| {
-        let _ = tree.lcp_stack::<usize>();
-    }));
+    c.bench_function("suffix_tree.lcp_stack::<usize>()", |b| {
+        b.iter(|| {
+            let _ = tree.lcp_stack::<usize>();
+        })
+    });
 }
 
 fn my_suffix_tree_to_lcp_stack_u32(c: &mut Criterion) {
     let tree = SuffixTree::new(LINE);
-    c.bench_function("suffix_tree.lcp_stack::<u32>()", |b| b.iter(|| {
-        let _ = tree.lcp_stack::<u32>();
-    }));
+    c.bench_function("suffix_tree.lcp_stack::<u32>()", |b| {
+        b.iter(|| {
+            let _ = tree.lcp_stack::<u32>();
+        })
+    });
 }
 
 fn my_suffix_array_to_lcp_usize(c: &mut Criterion) {
     let sa = SuffixArray::<usize>::new(LINE);
-    c.bench_function("sufix_array<usize>.lcp()", |b| b.iter(|| {
-        let _ = sa.lcp();
-    }));
+    c.bench_function("sufix_array<usize>.lcp()", |b| {
+        b.iter(|| {
+            let _ = sa.lcp();
+        })
+    });
 }
 
 fn my_suffix_array_to_lcp_u32(c: &mut Criterion) {
     let sa = SuffixArray::<u32>::new(LINE);
-    c.bench_function("sufix_array<u32>.lcp()", |b| b.iter(|| {
-        let _ = sa.lcp();
-    }));
+    c.bench_function("sufix_array<u32>.lcp()", |b| {
+        b.iter(|| {
+            let _ = sa.lcp();
+        })
+    });
 }
 
 fn my_suffix_array_build_usize(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<usize>::new(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::new(LINE);
-    }));
+    c.bench_function("SuffixArray::<usize>::new(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::new(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_compress_build_usize(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<usize>::new_compress(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::new_compress(LINE);
-    }));
+    c.bench_function("SuffixArray::<usize>::new_compress(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::new_compress(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_build_u32(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<u32>::new(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::new(LINE);
-    }));
+    c.bench_function("SuffixArray::<u32>::new(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::new(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_compress_build_u32(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<u32>::new_compress(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::new_compress(LINE);
-    }));
+    c.bench_function("SuffixArray::<u32>::new_compress(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::new_compress(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_stack_build_usize(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<usize>::new_stack(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::new_stack(LINE);
-    }));
+    c.bench_function("SuffixArray::<usize>::new_stack(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::new_stack(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_compress_stack_build_usize(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<usize>::new_stack_compress(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<usize>::new_stack_compress(LINE);
-    }));
+    c.bench_function("SuffixArray::<usize>::new_stack_compress(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<usize>::new_stack_compress(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_stack_build_u32(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<u32>::new_stack(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::new_stack(LINE);
-    }));
+    c.bench_function("SuffixArray::<u32>::new_stack(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::new_stack(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_compress_stack_build_u32(c: &mut Criterion) {
-    c.bench_function("SuffixArray::<u32>::new_stack_compress(LINE)", |b| b.iter(|| {
-        let _ = SuffixArray::<u32>::new_stack_compress(LINE);
-    }));
+    c.bench_function("SuffixArray::<u32>::new_stack_compress(LINE)", |b| {
+        b.iter(|| {
+            let _ = SuffixArray::<u32>::new_stack_compress(LINE);
+        })
+    });
 }
 
 fn my_suffix_array_find_usize(c: &mut Criterion) {
     let sa = SuffixArray::<usize>::new(LINE);
-    c.bench_function("suffix_array<usize>.find(FIND) ~ O(|find| * log(|word|))", |b| b.iter(|| {
-        let _ = sa.find(FIND);
-    }));
+    c.bench_function(
+        "suffix_array<usize>.find(FIND) ~ O(|find| * log(|word|))",
+        |b| {
+            b.iter(|| {
+                let _ = sa.find(FIND);
+            })
+        },
+    );
 }
 
 fn my_suffix_array_find_u32(c: &mut Criterion) {
     let sa = SuffixArray::<u32>::new(LINE);
-    c.bench_function("suffix_array<u32>.find(FIND) ~ O(|find| * log(|word|))", |b| b.iter(|| {
-        let _ = sa.find(FIND);
-    }));
+    c.bench_function(
+        "suffix_array<u32>.find(FIND) ~ O(|find| * log(|word|))",
+        |b| {
+            b.iter(|| {
+                let _ = sa.find(FIND);
+            })
+        },
+    );
 }
 
 fn my_suffix_array_find_all_usize(c: &mut Criterion) {
     let sa = SuffixArray::<usize>::new(LINE);
-    c.bench_function("suffix_array<usize>.find_all(FIND) ~ O(|find| * log(|word|))", |b| b.iter(|| {
-        let _ = sa.find_all(FIND);
-    }));
+    c.bench_function(
+        "suffix_array<usize>.find_all(FIND) ~ O(|find| * log(|word|))",
+        |b| {
+            b.iter(|| {
+                let _ = sa.find_all(FIND);
+            })
+        },
+    );
 }
 
 fn my_suffix_array_find_all_u32(c: &mut Criterion) {
     let sa = SuffixArray::<u32>::new(LINE);
-    c.bench_function("suffix_array<u32>.find_all(FIND) ~ O(|find| * log(|word|))", |b| b.iter(|| {
-        let _ = sa.find_all(FIND);
-    }));
+    c.bench_function(
+        "suffix_array<u32>.find_all(FIND) ~ O(|find| * log(|word|))",
+        |b| {
+            b.iter(|| {
+                let _ = sa.find_all(FIND);
+            })
+        },
+    );
 }
 
 fn my_suffix_array_find_big_usize(c: &mut Criterion) {
     let sa = SuffixArray::<usize>::new(LINE);
     let lcp = sa.lcp();
-    c.bench_function("suffix_array<usize>.find_big(FIND) ~ O(|word|)", |b| b.iter(|| {
-        let _ = sa.find_big(&lcp, FIND);
-    }));
+    c.bench_function("suffix_array<usize>.find_big(FIND) ~ O(|word|)", |b| {
+        b.iter(|| {
+            let _ = sa.find_big(&lcp, FIND);
+        })
+    });
 }
 
 fn my_suffix_array_find_big_u32(c: &mut Criterion) {
     let sa = SuffixArray::<u32>::new(LINE);
     let lcp = sa.lcp();
-    c.bench_function("suffix_array<u32>.find_big(FIND) ~ O(|word|)", |b| b.iter(|| {
-        let _ = sa.find_big(&lcp, FIND);
-    }));
+    c.bench_function("suffix_array<u32>.find_big(FIND) ~ O(|word|)", |b| {
+        b.iter(|| {
+            let _ = sa.find_big(&lcp, FIND);
+        })
+    });
 }
 
 fn my_suffix_array_find_all_big_usize(c: &mut Criterion) {
     let sa = SuffixArray::<usize>::new(LINE);
     let lcp = sa.lcp();
-    c.bench_function("suffix_array<usize>.find_big_all(FIND) ~ O(|word|)", |b| b.iter(|| {
-        let _ = sa.find_all_big(&lcp, FIND);
-    }));
+    c.bench_function("suffix_array<usize>.find_big_all(FIND) ~ O(|word|)", |b| {
+        b.iter(|| {
+            let _ = sa.find_all_big(&lcp, FIND);
+        })
+    });
 }
 
 fn my_suffix_array_find_all_big_u32(c: &mut Criterion) {
     let sa = SuffixArray::<u32>::new(LINE);
     let lcp = sa.lcp();
-    c.bench_function("suffix_array<u32>.find_big_all(FIND) ~ O(|word|)", |b| b.iter(|| {
-        let _ = sa.find_all_big(&lcp, FIND);
-    }));
+    c.bench_function("suffix_array<u32>.find_big_all(FIND) ~ O(|word|)", |b| {
+        b.iter(|| {
+            let _ = sa.find_all_big(&lcp, FIND);
+        })
+    });
 }
 
 fn my_suffix_tree_build_ukkonen(c: &mut Criterion) {
-    c.bench_function("Suffix tree build Ukkonen", |b| b.iter(|| {
-        let _ = SuffixTree::new(LINE);
-    }));
+    c.bench_function("Suffix tree build Ukkonen", |b| {
+        b.iter(|| {
+            let _ = SuffixTree::new(LINE);
+        })
+    });
 }
 
 fn my_suffix_tree_find(c: &mut Criterion) {
     let suffix_tree = SuffixTree::new(LINE);
-    c.bench_function("Suffix tree find", |b| b.iter(|| {
-        let _ = suffix_tree.find(FIND);
-    }));
+    c.bench_function("Suffix tree find", |b| {
+        b.iter(|| {
+            let _ = suffix_tree.find(FIND);
+        })
+    });
 }
 
-
-criterion_group!(benches,
+criterion_group!(
+    benches,
     my_suffix_array_to_lcp_usize,
     my_suffix_array_to_lcp_u32,
     my_suffix_array_build_usize,
@@ -228,7 +298,8 @@ criterion_group!(benches,
     my_suffix_array_find_all_big_usize,
     my_suffix_array_find_all_big_u32,
     my_suffix_array_to_suffix_tree_build,
-    my_suffix_tree_build_ukkonen, my_suffix_tree_find,
+    my_suffix_tree_build_ukkonen,
+    my_suffix_tree_find,
     my_suffix_tree_to_suffix_array_rec_build_usize,
     my_suffix_tree_to_suffix_array_rec_build_u32,
     my_suffix_tree_to_suffix_array_stack_build_usize,

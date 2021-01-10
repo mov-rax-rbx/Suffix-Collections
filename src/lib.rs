@@ -82,12 +82,11 @@
 #![no_std]
 #[macro_use(vec)]
 extern crate alloc;
-pub mod tree;
 pub mod array;
 pub mod lcp;
+pub mod tree;
 
 pub(crate) mod bit;
-
 
 use alloc::borrow::{Cow, ToOwned};
 use alloc::vec::Vec;
@@ -98,8 +97,15 @@ fn canonic_word<'t>(word: &'t str) -> Cow<'t, str> {
     } else {
         Cow::from(
             str::from_utf8(
-                &word.as_bytes().iter().chain(&[0]).map(|&x| x).collect::<Vec<_>>()
-            ).unwrap().to_owned()
+                &word
+                    .as_bytes()
+                    .iter()
+                    .chain(&[0])
+                    .map(|&x| x)
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+            .to_owned(),
         )
     }
 }

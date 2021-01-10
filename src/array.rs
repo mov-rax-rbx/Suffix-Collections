@@ -41,11 +41,16 @@
 //!     let st = SuffixTree::from(sa);
 //! ```
 
-use alloc::vec::{Vec, IntoIter};
 use alloc::borrow::{Cow, ToOwned};
-use core::{str, slice::Iter, option::Option, cmp::{max, Eq}};
+use alloc::vec::{IntoIter, Vec};
+use core::{
+    cmp::{max, Eq},
+    option::Option,
+    slice::Iter,
+    str,
+};
 
-use crate::{bit::*, tree::*, lcp::*, canonic_word};
+use crate::{bit::*, canonic_word, lcp::*, tree::*};
 use build_suffix_array::SuffixIndices;
 
 #[repr(transparent)]
@@ -86,7 +91,7 @@ impl<'t> Bit for BitSlice<'t> {
 #[derive(Debug, Clone)]
 pub struct SuffixArray<'sa, T: SuffixIndices<T>> {
     word: Cow<'sa, str>,
-    sa: Vec<T>
+    sa: Vec<T>,
 }
 
 impl<'sa, T: SuffixIndices<T>> IntoIterator for SuffixArray<'sa, T> {
@@ -134,10 +139,8 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             };
         }
         let word = canonic_word(word);
-        let mut offset_dict = vec![
-            (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::DICT_SIZE)
-        ];
+        let mut offset_dict =
+            vec![(T::zero(), T::zero()); max(word.len(), SuffixArray::<T>::DICT_SIZE)];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
         let mut sa_init = Byte::vec(word.len());
@@ -149,12 +152,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         //      s_idx.len() == word.len()
         //      word.last() == '\0'
         debug_assert!(
-            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize &&
-            offset_dict.len() >= word.as_bytes().len() &&
-            tmp_end_s.len() == offset_dict.len() &&
-            sa.len() == word.as_bytes().len() &&
-            sa_init.len() * 8 >= sa.len() &&
-            *word.as_bytes().last().unwrap() == 0
+            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize
+                && offset_dict.len() >= word.as_bytes().len()
+                && tmp_end_s.len() == offset_dict.len()
+                && sa.len() == word.as_bytes().len()
+                && sa_init.len() * 8 >= sa.len()
+                && *word.as_bytes().last().unwrap() == 0
         );
         unsafe {
             build_suffix_array::suffix_array(
@@ -165,14 +168,11 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut BitArrMut(&mut sa_init),
                 |len| Byte::vec(len),
                 // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitArrMut(&mut *(bytes as *mut _))
+                |bytes| BitArrMut(&mut *(bytes as *mut _)),
             );
         }
 
-        Self {
-            word: word,
-            sa: sa,
-        }
+        Self { word: word, sa: sa }
     }
 
     /// Construct suffix array not recursive. Complexity O(n).
@@ -199,10 +199,8 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             };
         }
         let word = canonic_word(word);
-        let mut offset_dict = vec![
-            (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::DICT_SIZE)
-        ];
+        let mut offset_dict =
+            vec![(T::zero(), T::zero()); max(word.len(), SuffixArray::<T>::DICT_SIZE)];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
         let mut sa_init = Byte::vec(word.len());
@@ -213,12 +211,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         //      s_idx.len() == word.len()
         //      word.last() == '\0'
         debug_assert!(
-            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize &&
-            offset_dict.len() >= word.as_bytes().len() &&
-            tmp_end_s.len() == offset_dict.len() &&
-            sa.len() == word.as_bytes().len() &&
-            sa_init.len() * 8 >= sa.len() &&
-            *word.as_bytes().last().unwrap() == 0
+            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize
+                && offset_dict.len() >= word.as_bytes().len()
+                && tmp_end_s.len() == offset_dict.len()
+                && sa.len() == word.as_bytes().len()
+                && sa_init.len() * 8 >= sa.len()
+                && *word.as_bytes().last().unwrap() == 0
         );
         unsafe {
             build_suffix_array::suffix_array_stack(
@@ -230,14 +228,11 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 |len| Byte::vec(len),
                 // safe cast because Rust can't deduce that we won't return multiple references to the same value
                 |bytes| BitArrMut(&mut *(bytes as *mut _)),
-                |bytes| BitArr(&*(bytes as *const _))
+                |bytes| BitArr(&*(bytes as *const _)),
             );
         }
 
-        Self {
-            word: word,
-            sa: sa,
-        }
+        Self { word: word, sa: sa }
     }
 
     /// Construct suffix array recursive. Complexity O(n)
@@ -263,10 +258,8 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             };
         }
         let word = canonic_word(word);
-        let mut offset_dict = vec![
-            (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::DICT_SIZE)
-        ];
+        let mut offset_dict =
+            vec![(T::zero(), T::zero()); max(word.len(), SuffixArray::<T>::DICT_SIZE)];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
         let mut sa_init = vec![Byte::default(); word.len()];
@@ -278,12 +271,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         //      s_idx.len() == word.len()
         //      word.last() == '\0'
         debug_assert!(
-            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize &&
-            offset_dict.len() >= word.as_bytes().len() &&
-            tmp_end_s.len() == offset_dict.len() &&
-            sa.len() == word.as_bytes().len() &&
-            sa_init.len() == sa.len() &&
-            *word.as_bytes().last().unwrap() == 0
+            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize
+                && offset_dict.len() >= word.as_bytes().len()
+                && tmp_end_s.len() == offset_dict.len()
+                && sa.len() == word.as_bytes().len()
+                && sa_init.len() == sa.len()
+                && *word.as_bytes().last().unwrap() == 0
         );
         unsafe {
             build_suffix_array::suffix_array(
@@ -294,14 +287,11 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut BitSliceMut(&mut sa_init),
                 |len| vec![Byte::default(); len],
                 // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitSliceMut(&mut *(bytes as *mut _))
+                |bytes| BitSliceMut(&mut *(bytes as *mut _)),
             );
         }
 
-        Self {
-            word: word,
-            sa: sa,
-        }
+        Self { word: word, sa: sa }
     }
 
     /// Construct suffix array not recursive. Complexity O(n)
@@ -327,10 +317,8 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             };
         }
         let word = canonic_word(word);
-        let mut offset_dict = vec![
-            (T::zero(), T::zero());
-            max(word.len(), SuffixArray::<T>::DICT_SIZE)
-        ];
+        let mut offset_dict =
+            vec![(T::zero(), T::zero()); max(word.len(), SuffixArray::<T>::DICT_SIZE)];
         let mut tmp_end_s = vec![T::zero(); offset_dict.len()];
         let mut sa = vec![T::zero(); word.len()];
         let mut sa_init = vec![Byte::default(); word.len()];
@@ -342,12 +330,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         //      s_idx.len() == word.len()
         //      word.last() == '\0'
         debug_assert!(
-            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize &&
-            offset_dict.len() >= word.as_bytes().len() &&
-            tmp_end_s.len() == offset_dict.len() &&
-            sa.len() == word.as_bytes().len() &&
-            sa_init.len() == sa.len() &&
-            *word.as_bytes().last().unwrap() == 0
+            offset_dict.len() > *word.as_bytes().iter().max().unwrap() as usize
+                && offset_dict.len() >= word.as_bytes().len()
+                && tmp_end_s.len() == offset_dict.len()
+                && sa.len() == word.as_bytes().len()
+                && sa_init.len() == sa.len()
+                && *word.as_bytes().last().unwrap() == 0
         );
         unsafe {
             build_suffix_array::suffix_array_stack(
@@ -359,14 +347,11 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 |len| vec![Byte::default(); len],
                 // safe cast because Rust can't deduce that we won't return multiple references to the same value
                 |bytes| BitSliceMut(&mut *(bytes as *mut _)),
-                |bytes| BitSlice(&*(bytes as *const _))
+                |bytes| BitSlice(&*(bytes as *const _)),
             );
         }
 
-        Self {
-            word: word,
-            sa: sa,
-        }
+        Self { word: word, sa: sa }
     }
 
     /// Construct suffix array from suffix tree not recursive. Complexity O(n)
@@ -439,7 +424,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         // correct because sa is correct suffix array && tree.word().last() == '\0'
         Self {
             word: Cow::from(tree.word().to_owned()),
-            sa: sa
+            sa: sa,
         }
     }
 
@@ -501,8 +486,9 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         let mut lcp = LCP::<T>::new(vec![T::zero(); self.sa.len()]);
         let mut sa_idx = vec![T::zero(); self.sa.len()];
         // safe max(sa) < sa_idx.len()
-        self.sa.iter().enumerate().for_each(|(i, &x)|
-            unsafe { *sa_idx.get_unchecked_mut(x.to_usize()) = T::try_from(i + 1).ok().unwrap() });
+        self.sa.iter().enumerate().for_each(|(i, &x)| unsafe {
+            *sa_idx.get_unchecked_mut(x.to_usize()) = T::try_from(i + 1).ok().unwrap()
+        });
         let mut pref_len = T::zero();
         let word = self.word.as_bytes();
         for x in sa_idx {
@@ -514,13 +500,17 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             // safe l < word.len() && r < word.len()
             let l = unsafe { *self.sa.get_unchecked(x.to_usize() - 1) };
             let r = unsafe { *self.sa.get_unchecked(x.to_usize()) };
-            pref_len = unsafe { count_eq(
-                word.get_unchecked(l.to_usize()..),
-                word.get_unchecked(r.to_usize()..),
-                pref_len
-            ) };
+            pref_len = unsafe {
+                count_eq(
+                    word.get_unchecked(l.to_usize()..),
+                    word.get_unchecked(r.to_usize()..),
+                    pref_len,
+                )
+            };
             // safe x < sa.len() by previous check && lcp.len() == sa.len()
-            unsafe { *lcp.idx_mut(x.to_usize()) = pref_len; }
+            unsafe {
+                *lcp.idx_mut(x.to_usize()) = pref_len;
+            }
             if pref_len > T::zero() {
                 pref_len -= T::one();
             }
@@ -592,10 +582,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             None => &[],
             Some(start) => {
                 // safe because 0 <= start < self.sa.len()
-                let end = start +
-                    lcp.iter().skip(start + 1)
-                    .take_while(|&&lcp| find.len() <= lcp.to_usize())
-                    .count();
+                let end = start
+                    + lcp
+                        .iter()
+                        .skip(start + 1)
+                        .take_while(|&&lcp| find.len() <= lcp.to_usize())
+                        .count();
                 // safe start <= end && 0 <= start < sa.len() && 0 <= end < sa.len()
                 unsafe { self.sa.get_unchecked(start..=end) }
             }
@@ -616,14 +608,15 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         });
         // skip all matches
         // safe because 0 <= start < self.sa.len()
-        let end = start + unsafe {
-            binary_search(self.sa.get_unchecked(start..), |&idx| {
-                // safe because binary search correct =>
-                //  0 <= idx < self.sa.len() && max(sa) < word.len()
-                idx.to_usize() + find.len() < word.len()
-                && word.get_unchecked(idx.to_usize()..idx.to_usize() + find.len()) == find
-            })
-        };
+        let end = start
+            + unsafe {
+                binary_search(self.sa.get_unchecked(start..), |&idx| {
+                    // safe because binary search correct =>
+                    //  0 <= idx < self.sa.len() && max(sa) < word.len()
+                    idx.to_usize() + find.len() < word.len()
+                        && word.get_unchecked(idx.to_usize()..idx.to_usize() + find.len()) == find
+                })
+            };
 
         (start, end)
     }
@@ -636,8 +629,9 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         // entry of the first character (byte) is searched for by means of binary search
         // safe because binary search correct =>
         //  0 <= idx < self.sa.len() && max(sa) < word.len() && !find.is_empty()
-        let start = binary_search(&self.sa,
-            |&idx| unsafe { word.get_unchecked(idx.to_usize()) < find.get_unchecked(0) });
+        let start = binary_search(&self.sa, |&idx| unsafe {
+            word.get_unchecked(idx.to_usize()) < find.get_unchecked(0)
+        });
 
         // loop continue while total_eq < find.len() and total_eq never decrement
         let mut total_eq = 0;
@@ -647,8 +641,9 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 count_eq(
                     word.get_unchecked(idx.to_usize()..),
                     find.get_unchecked(..),
-                    total_eq
-                ) };
+                    total_eq,
+                )
+            };
             if total_eq == find.len() {
                 return Some(i - 1);
             }
@@ -664,12 +659,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
 
 fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
     let mut start = 0;
-    let mut cnt =
-        if !x.is_empty() {
-            x.len() - 1
-        } else {
-            0
-        };
+    let mut cnt = if !x.is_empty() { x.len() - 1 } else { 0 };
     while cnt > 0 {
         let mid = start + cnt / 2;
         // safe 0 <= mid < x.len()
@@ -694,7 +684,12 @@ fn count_eq<T: Eq, P: SuffixIndices<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P
     acc
 }
 
-fn to_suffix_array_rec_inner<T: SuffixIndices<T>>(tree: &SuffixTree, node_idx: NodeIdx, len: usize, sa: &mut Vec<T>) {
+fn to_suffix_array_rec_inner<T: SuffixIndices<T>>(
+    tree: &SuffixTree,
+    node_idx: NodeIdx,
+    len: usize,
+    sa: &mut Vec<T>,
+) {
     let node = tree.node(node_idx);
     if node.children().is_empty() {
         sa.push(T::try_from(node.pos() - len).ok().unwrap());
@@ -704,7 +699,6 @@ fn to_suffix_array_rec_inner<T: SuffixIndices<T>>(tree: &SuffixTree, node_idx: N
         to_suffix_array_rec_inner(&tree, child, len + node.len(), sa);
     }
 }
-
 
 // The algorithm of building a suffix array. It uses unsafe blocks to disable
 // border check when accessing an array. But if the input data conditions are met,
@@ -720,7 +714,7 @@ pub(crate) mod build_suffix_array {
     #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
     pub(crate) enum TSuff {
         S = 0,
-        L = 1
+        L = 1,
     }
 
     pub trait ToUsize {
@@ -783,17 +777,30 @@ pub(crate) mod build_suffix_array {
             )*
         };
     }
-    use core::{debug_assert, ops::{Add, AddAssign, Sub, SubAssign}};
-    use core::convert::TryFrom;
     use super::*;
+    use core::convert::TryFrom;
+    use core::{
+        debug_assert,
+        ops::{Add, AddAssign, Sub, SubAssign},
+    };
 
     pub trait SuffixIndices<T>:
-        AddAssign + Add<Output = T>
-        + SubAssign + Sub<Output = T>
-        + ToUsize + Zero + One + Max
-        + TryFrom<usize> + Ord + Eq
-        + Clone + Copy + Default
-    {}
+        AddAssign
+        + Add<Output = T>
+        + SubAssign
+        + Sub<Output = T>
+        + ToUsize
+        + Zero
+        + One
+        + Max
+        + TryFrom<usize>
+        + Ord
+        + Eq
+        + Clone
+        + Copy
+        + Default
+    {
+    }
 
     macro_rules! impl_SuffixIndices {
         ($($tp:ident),* $(,)?) => {
@@ -813,16 +820,21 @@ pub(crate) mod build_suffix_array {
     unsafe fn naive_sort<T: ToUsize + Ord + Copy, P: Ord>(sort: &mut [T], s_idx: &[P]) {
         // safe if max(sort) < s_idx.len()
         debug_assert!(sort.iter().max().unwrap().to_usize() < s_idx.len());
-        sort.sort_by(|&a, &b|
-            s_idx.get_unchecked(a.to_usize()..).cmp(&s_idx.get_unchecked(b.to_usize()..)));
+        sort.sort_by(|&a, &b| {
+            s_idx
+                .get_unchecked(a.to_usize()..)
+                .cmp(&s_idx.get_unchecked(b.to_usize()..))
+        });
     }
     #[inline]
     unsafe fn create_bucket_dict<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx: &[T],
-        offset_dict: &mut [(Scalar, Scalar)]
+        s_idx       : &[T],
+        offset_dict : &mut [(Scalar, Scalar)],
     ) {
         // safe because max(s_idx) < offset_dict.len()
-        s_idx.iter().for_each(|&x| offset_dict.get_unchecked_mut(x.to_usize()).0 += Scalar::one());
+        s_idx
+            .iter()
+            .for_each(|&x| offset_dict.get_unchecked_mut(x.to_usize()).0 += Scalar::one());
         offset_dict.iter_mut().fold(Scalar::zero(), |acc, offs| {
             let cnt = offs.0;
             *offs = (acc, acc + cnt);
@@ -836,13 +848,17 @@ pub(crate) mod build_suffix_array {
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
         sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut
+        sa_init     : &mut impl BitMut,
     ) {
-        offset_dict.iter().zip(tmp_end_s.iter_mut()).for_each(|(&(_, x), end_s)| *end_s = x);
+        offset_dict
+            .iter()
+            .zip(tmp_end_s.iter_mut())
+            .for_each(|(&(_, x), end_s)| *end_s = x);
         sa_lms.iter().rev().for_each(|&x| {
             // safe x == sa_lms && max(sa_lms) < s_idx_len() && max(s_idx) < tmp_end_s.len() &&
             // max(tmp_end_s) < sa.len() && sa_init.len() == sa.len()
-            let ptr_end_s = tmp_end_s.get_unchecked_mut(s_idx.get_unchecked(x.to_usize()).to_usize());
+            let ptr_end_s =
+                tmp_end_s.get_unchecked_mut(s_idx.get_unchecked(x.to_usize()).to_usize());
             *ptr_end_s -= Scalar::one();
             *sa.get_unchecked_mut(ptr_end_s.to_usize()) = x;
             sa_init.set_unchecked(ptr_end_s.to_usize());
@@ -855,7 +871,7 @@ pub(crate) mod build_suffix_array {
         t           : &impl Bit,
         offset_dict : &mut [(Scalar, Scalar)],
         sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut
+        sa_init     : &mut impl BitMut,
     ) {
         for x in 0..sa.len() {
             // safe x < sa.len() && sa_init.len() == sa.len()
@@ -865,8 +881,8 @@ pub(crate) mod build_suffix_array {
                 // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
                 // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
                 if t.get_unchecked(idx.to_usize()) == TSuff::L as u8 {
-                    let ptr_offset =
-                        offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx.to_usize()).to_usize());
+                    let ptr_offset = offset_dict
+                        .get_unchecked_mut(s_idx.get_unchecked(idx.to_usize()).to_usize());
                     *sa.get_unchecked_mut(ptr_offset.0.to_usize()) = idx;
                     sa_init.set_unchecked(ptr_offset.0.to_usize());
                     ptr_offset.0 += Scalar::one();
@@ -881,7 +897,7 @@ pub(crate) mod build_suffix_array {
         t           : &impl Bit,
         offset_dict : &mut [(Scalar, Scalar)],
         sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut
+        sa_init     : &mut impl BitMut,
     ) {
         for x in (0..sa.len()).rev() {
             // safe x < sa.len() && sa_init.len() == sa.len()
@@ -891,8 +907,8 @@ pub(crate) mod build_suffix_array {
                 // safe idx == x && 0 < x < sa.len() && t.len() == s_idx.len() &&
                 // max(s_idx) < offset_dict.len() && max(offset_dict) < sa.len()
                 if t.get_unchecked(idx.to_usize()) == TSuff::S as u8 {
-                    let ptr_offset =
-                        offset_dict.get_unchecked_mut(s_idx.get_unchecked(idx.to_usize()).to_usize());
+                    let ptr_offset = offset_dict
+                        .get_unchecked_mut(s_idx.get_unchecked(idx.to_usize()).to_usize());
                     ptr_offset.1 -= Scalar::one();
                     *sa.get_unchecked_mut(ptr_offset.1.to_usize()) = idx;
                     sa_init.set_unchecked(ptr_offset.1.to_usize());
@@ -908,7 +924,7 @@ pub(crate) mod build_suffix_array {
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
         sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut
+        sa_init     : &mut impl BitMut,
     ) {
         create_bucket_dict(s_idx, offset_dict);
         add_lms_to_end(s_idx, sa_lms, offset_dict, tmp_end_s, sa, sa_init);
@@ -917,7 +933,10 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn calc_type<T: Ord>(s_idx: &[T], t: &mut impl BitMut) {
-        s_idx.windows(2).rev().zip((0..s_idx.len() - 1).into_iter().rev())
+        s_idx
+            .windows(2)
+            .rev()
+            .zip((0..s_idx.len() - 1).into_iter().rev())
             .for_each(|(s_idx, i)| {
                 if s_idx[0] > s_idx[1] {
                     t.set_unchecked(i);
@@ -926,13 +945,17 @@ pub(crate) mod build_suffix_array {
                         t.set_unchecked(i);
                     }
                 }
-        });
+            });
     }
     #[inline]
     fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar> {
-        (0..len - 1).into_iter().filter(|&i| {
-            unsafe { t.get_unchecked(i) == TSuff::L as u8 && t.get_unchecked(i + 1) == TSuff::S as u8 }
-        }).map(|i| Scalar::try_from(i + 1).ok().unwrap()).collect::<Vec<_>>()
+        (0..len - 1)
+            .into_iter()
+            .filter(|&i| unsafe {
+                t.get_unchecked(i) == TSuff::L as u8 && t.get_unchecked(i + 1) == TSuff::S as u8
+            })
+            .map(|i| Scalar::try_from(i + 1).ok().unwrap())
+            .collect::<Vec<_>>()
     }
     #[inline]
     unsafe fn sublms_is_eq<T: Eq>(s_idx: &[T], t: &impl Bit, x: usize, prev: usize) -> bool {
@@ -942,14 +965,16 @@ pub(crate) mod build_suffix_array {
             // 0 <= x < s_idx.len() && s_idx.len() == t.len() &&
             // compare only 2 sublms not all word
             if *s_idx.get_unchecked(x + i) != *s_idx.get_unchecked(prev + i)
-            || t.get_unchecked(x + i) != t.get_unchecked(prev + i) {
+                || t.get_unchecked(x + i) != t.get_unchecked(prev + i)
+            {
                 return false;
             }
             if i != 0
-            && (
-                (t.get_unchecked(x + i - 1) == TSuff::L as u8 && t.get_unchecked(x + i) == TSuff::S as u8)
-                || (t.get_unchecked(prev + i - 1) == TSuff::L as u8 && t.get_unchecked(prev + i) == TSuff::S as u8)
-            ) {
+                && ((t.get_unchecked(x + i - 1) == TSuff::L as u8
+                    && t.get_unchecked(x + i) == TSuff::S as u8)
+                    || (t.get_unchecked(prev + i - 1) == TSuff::L as u8
+                        && t.get_unchecked(prev + i) == TSuff::S as u8))
+            {
                 return true;
             }
         }
@@ -970,8 +995,7 @@ pub(crate) mod build_suffix_array {
             // safe 0 < x < sort_sublms.len() && max(sa) < x.len() (sa contains sort sumlms => max(sa) == max(idx_lms))
             x > Scalar::zero()
             && t.get_unchecked(x.to_usize()) == TSuff::S as u8
-            && t.get_unchecked((x - Scalar::one()).to_usize()) == TSuff::L as u8
-        );
+            && t.get_unchecked((x - Scalar::one()).to_usize()) == TSuff::L as u8);
         for &x in sorted_lms {
             // safe x < alphabet.len() && sorted_lms == sa &&
             // sort_sublms.len() == s_idx.len() && s_idx.len() <= alphabet.len()
@@ -985,13 +1009,16 @@ pub(crate) mod build_suffix_array {
             prev = x;
         }
         // safe max(idx_lms) < s_idx.len() && s_idx.len() <= alphabet.len()
-        idx_lms.iter().map(|&x| *alphabet.get_unchecked(x.to_usize())).collect()
+        idx_lms
+            .iter()
+            .map(|&x| *alphabet.get_unchecked(x.to_usize()))
+            .collect()
     }
     #[inline]
     unsafe fn pack_lms<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         idx_lms     : &[Scalar],
         s_idx       : &[T],
-        offset_dict : &mut [(Scalar, Scalar)]
+        offset_dict : &mut [(Scalar, Scalar)],
     ) {
         idx_lms.iter().enumerate().for_each(|(i, &x)| {
             // safe max(idx_lms) < s_idx.len() &&
@@ -1008,15 +1035,21 @@ pub(crate) mod build_suffix_array {
     #[inline]
     unsafe fn unpack_lms<Scalar: Zero + Eq + ToUsize + Copy>(
         idx_lms     : &[Scalar],
-        offset_dict : &[(Scalar, Scalar)]
+        offset_dict : &[(Scalar, Scalar)],
     ) -> Vec<Scalar> {
         // safe max(offset_dict) < idx_lms.len()
-        offset_dict.iter()
+        offset_dict
+            .iter()
             .filter(|&&(x, _)| x != Scalar::zero())
-            .map(|&(_, y)| *idx_lms.get_unchecked(y.to_usize())).collect()
+            .map(|&(_, y)| *idx_lms.get_unchecked(y.to_usize()))
+            .collect()
     }
     #[inline]
-    unsafe fn sort_lms_in_new_str<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
+    unsafe fn sort_lms_in_new_str<
+        T      : ToUsize + Ord + Copy,
+        Scalar : SuffixIndices<Scalar>,
+        BMut   : BitMut,
+    >(
         new_s_idx   : &[T],
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
@@ -1037,11 +1070,13 @@ pub(crate) mod build_suffix_array {
             sa.get_unchecked_mut(..new_size),
             &mut sa_init.range_to_mut(new_size),
             ret_bytes,
-            to_bits
+            to_bits,
         );
         // safe new_size <= sa.len() by previous explanation && max(sa) < idx_lms.len()
         sa.get_unchecked(..new_size)
-            .iter().map(|&x| *idx_lms.get_unchecked(x.to_usize())).collect()
+            .iter()
+            .map(|&x| *idx_lms.get_unchecked(x.to_usize()))
+            .collect()
     }
     #[inline]
     fn clear<T: Default>(src: &mut [T]) {
@@ -1078,7 +1113,16 @@ pub(crate) mod build_suffix_array {
             sa_init.clear();
             clear(offset_dict);
 
-            sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms, ret_bytes, to_bits)
+            sort_lms_in_new_str(
+                &new_s_idx,
+                offset_dict,
+                tmp_end_s,
+                sa,
+                sa_init,
+                idx_lms,
+                ret_bytes,
+                to_bits,
+            )
         } else {
             unreachable!();
         }
@@ -1090,7 +1134,11 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
+    pub(crate) unsafe fn suffix_array<
+        T      : ToUsize + Ord + Copy,
+        Scalar : SuffixIndices<Scalar>,
+        BMut   : BitMut,
+    >(
         s_idx       : &[T],
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
@@ -1104,8 +1152,17 @@ pub(crate) mod build_suffix_array {
         calc_type(&s_idx, t);
         // lms => ... L S ... (... > <= ...)
         let idx_lms = calc_lms(t, s_idx.len());
-        let sa_lms = sort_lms(s_idx, offset_dict, tmp_end_s,
-            sa, sa_init, t, &idx_lms, ret_bytes, to_bits);
+        let sa_lms = sort_lms(
+            s_idx,
+            offset_dict,
+            tmp_end_s,
+            sa,
+            sa_init,
+            t,
+            &idx_lms,
+            ret_bytes,
+            to_bits,
+        );
 
         sa_init.clear();
         clear(offset_dict);
@@ -1114,18 +1171,9 @@ pub(crate) mod build_suffix_array {
     }
 
     enum TState<Scalar: SuffixIndices<Scalar>> {
-        Rec (
-            Vec<Scalar>,
-        ),
-        RecEnd (
-            Vec<Scalar>,
-            Vec<Scalar>,
-            Vec<Byte>,
-        ),
-        End (
-            Vec<Scalar>,
-            Vec<Byte>,
-        ),
+        Rec(Vec<Scalar>),
+        RecEnd(Vec<Scalar>, Vec<Scalar>, Vec<Byte>),
+        End(Vec<Scalar>, Vec<Byte>),
     }
 
     #[repr(u8)]
@@ -1139,7 +1187,12 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array_stack<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut, B: Bit>(
+    pub(crate) unsafe fn suffix_array_stack<
+        T      : ToUsize + Ord + Copy,
+        Scalar : SuffixIndices<Scalar>,
+        BMut   : BitMut,
+        B      : Bit,
+    >(
         s_idx          : &[T],
         offset_dict    : &mut [(Scalar, Scalar)],
         tmp_end_s      : &mut [Scalar],
@@ -1158,30 +1211,37 @@ pub(crate) mod build_suffix_array {
         let idx_lms = calc_lms(&t, s_idx.len());
         pack_lms(&idx_lms, &s_idx, offset_dict);
 
-        let (res_lms, end_state) =
-            if idx_lms.len() == 1 {
-                // safe we have sentinel => \0
-                (vec![*idx_lms.get_unchecked(0)], NTState::End)
-            } else if lms_is_unique(offset_dict) {
-                (unpack_lms(&idx_lms, offset_dict), NTState::End)
-            } else if idx_lms.len() > 1 {
-                clear(offset_dict);
-                induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
-                let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
+        let (res_lms, end_state) = if idx_lms.len() == 1 {
+            // safe we have sentinel => \0
+            (vec![*idx_lms.get_unchecked(0)], NTState::End)
+        } else if lms_is_unique(offset_dict) {
+            (unpack_lms(&idx_lms, offset_dict), NTState::End)
+        } else if idx_lms.len() > 1 {
+            clear(offset_dict);
+            induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
+            let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
 
-                sa_init.clear();
-                clear(offset_dict);
+            sa_init.clear();
+            clear(offset_dict);
 
-                debug_assert!(idx_lms.len() == new_s_idx.len());
-                state_stack.push(TState::Rec(new_s_idx));
-                (
-                    suffix_array_stack_inner(offset_dict, tmp_end_s,
-                        sa, sa_init, state_stack, ret_bytes, to_bits, to_bits_no_mut),
-                    NTState::RecEnd
-                )
-            } else {
-                unreachable!();
-            };
+            debug_assert!(idx_lms.len() == new_s_idx.len());
+            state_stack.push(TState::Rec(new_s_idx));
+            (
+                suffix_array_stack_inner(
+                    offset_dict,
+                    tmp_end_s,
+                    sa,
+                    sa_init,
+                    state_stack,
+                    ret_bytes,
+                    to_bits,
+                    to_bits_no_mut,
+                ),
+                NTState::RecEnd,
+            )
+        } else {
+            unreachable!();
+        };
 
         match end_state {
             NTState::End => {
@@ -1193,9 +1253,10 @@ pub(crate) mod build_suffix_array {
                 sa_init.clear();
                 clear(offset_dict);
                 // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                let sa_lms =
-                    res_lms.iter()
-                    .map(|&x| *idx_lms.get_unchecked(x.to_usize())).collect::<Vec<_>>();
+                let sa_lms = res_lms
+                    .iter()
+                    .map(|&x| *idx_lms.get_unchecked(x.to_usize()))
+                    .collect::<Vec<_>>();
                 induced_sort(&s_idx, &sa_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
             }
         }
@@ -1256,9 +1317,15 @@ pub(crate) mod build_suffix_array {
                             } else if idx_lms.len() > 1 {
                                 clear(offset_dict);
                                 // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                                induced_sort(&s_idx, &idx_lms, &t, offset_dict,
+                                induced_sort(
+                                    &s_idx,
+                                    &idx_lms,
+                                    &t,
+                                    offset_dict,
                                     tmp_end_s.get_unchecked_mut(..s_idx.len()),
-                                    sa, sa_init);
+                                    sa,
+                                    sa_init,
+                                );
                                 let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
 
                                 sa_init.clear();
@@ -1280,9 +1347,15 @@ pub(crate) mod build_suffix_array {
                             sa_init.clear();
                             clear(offset_dict);
                             // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                            induced_sort(&s_idx, &res_lms, &t, offset_dict,
+                            induced_sort(
+                                &s_idx,
+                                &res_lms,
+                                &t,
+                                offset_dict,
                                 tmp_end_s.get_unchecked_mut(..s_idx.len()),
-                                sa, &mut sa_init);
+                                sa,
+                                &mut sa_init,
+                            );
                             res_lms = Vec::from(sa);
                         }
                         TState::RecEnd(s_idx, idx_lms, t) => {
@@ -1294,12 +1367,19 @@ pub(crate) mod build_suffix_array {
                             sa_init.clear();
                             clear(offset_dict);
                             // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
-                            let sa_lms =
-                                res_lms.iter()
-                                .map(|&x| *idx_lms.get_unchecked(x.to_usize())).collect::<Vec<_>>();
-                            induced_sort(&s_idx, &sa_lms, &t, offset_dict,
+                            let sa_lms = res_lms
+                                .iter()
+                                .map(|&x| *idx_lms.get_unchecked(x.to_usize()))
+                                .collect::<Vec<_>>();
+                            induced_sort(
+                                &s_idx,
+                                &sa_lms,
+                                &t,
+                                offset_dict,
                                 tmp_end_s.get_unchecked_mut(..s_idx.len()),
-                                sa, &mut sa_init);
+                                sa,
+                                &mut sa_init,
+                            );
                             res_lms = Vec::from(sa);
                         }
                     }

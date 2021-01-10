@@ -12,7 +12,7 @@ impl Byte {
 
     #[inline]
     pub fn vec(n: usize) -> Vec<Byte> {
-        vec![Byte(0); hi(n) + if lo(n) == 0 { 0 } else { 1 }]
+        vec![Byte(0); num_to_byte_pack(n)]
     }
 
     #[inline]
@@ -50,9 +50,14 @@ pub(crate) struct BitArrMut<'b>(pub(crate) &'b mut [Byte]);
 impl<'b> BitMut for BitArrMut<'b> {
     #[inline]
     unsafe fn range_to_mut(&mut self, end: usize) -> Self {
-        debug_assert!(hi(end) + if lo(end) == 0 { 0 } else { 1 } <= self.0.len());
+        debug_assert!(num_to_byte_pack(end) <= self.0.len());
         // safe cast because Rust can't deduce that we won't return multiple references to the same value
-        Self(&mut *(self.0.get_unchecked_mut(..hi(end) + if lo(end) == 0 { 0 } else { 1 }) as *mut _))
+        Self(
+            &mut *(self
+                .0
+                .get_unchecked_mut(..num_to_byte_pack(end))
+                as *mut _),
+        )
     }
     #[inline]
     unsafe fn set_unchecked(&mut self, n: usize) {
@@ -91,6 +96,11 @@ fn hi(n: usize) -> usize {
 #[inline]
 fn lo(n: usize) -> usize {
     n & Byte::MASK
+}
+
+#[inline]
+fn num_to_byte_pack(n: usize) -> usize {
+    hi(n) + if lo(n) == 0 { 0 } else { 1 }
 }
 
 mod test {

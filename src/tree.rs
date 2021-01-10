@@ -38,7 +38,7 @@ use alloc::collections::BTreeMap;
 use alloc::{vec::Vec, borrow::Cow, borrow::ToOwned};
 use core::{fmt, format_args, str, option::Option};
 
-use crate::{array::*, array::build_suffix_array::SaType, lcp::*, canonic_word};
+use crate::{array::*, array::build_suffix_array::SuffixIndices, lcp::*, canonic_word};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
@@ -83,7 +83,7 @@ pub struct Node {
 }
 
 impl Node {
-     /// Return suffix link
+    /// Return suffix link
     ///```
     /// use suff_collections::tree::*;
     ///
@@ -214,7 +214,7 @@ impl<'t> SuffixTree<'t> {
     /// let st = SuffixArray::<usize>::new("word\0");
     /// let sa = SuffixTree::from(st);
     /// ```
-    pub fn from<T: SaType<T>>(array: SuffixArray<T>) -> Self {
+    pub fn from<T: SuffixIndices<T>>(array: SuffixArray<T>) -> Self {
         let lcp = array.lcp();
         let (word, sa) = array.split_owned();
         let mut tree = Self {
@@ -342,7 +342,7 @@ impl<'t> SuffixTree<'t> {
     /// // let lcp = SuffixTree::new("word").lcp_stack::<u32>();
     /// let lcp = SuffixTree::new("word").lcp_stack::<usize>();
     /// ```
-    pub fn lcp_stack<T: SaType<T>>(&self) -> LCP<T> {
+    pub fn lcp_stack<T: SuffixIndices<T>>(&self) -> LCP<T> {
         let mut lcp = Vec::<T>::with_capacity(self.word.len());
         lcp.push(T::zero());
         let mut stack = Vec::with_capacity(self.word.len());
@@ -399,7 +399,7 @@ impl<'t> SuffixTree<'t> {
     /// // let lcp = SuffixTree::new("word").lcp_rec::<u32>();
     /// let lcp = SuffixTree::new("word").lcp_rec::<usize>();
     /// ```
-    pub fn lcp_rec<T: SaType<T>>(&self) -> LCP<T> {
+    pub fn lcp_rec<T: SuffixIndices<T>>(&self) -> LCP<T> {
         let node = self.node(NodeIdx::root());
         if node.children.is_empty() {
             return LCP::new(vec![]);
@@ -693,7 +693,7 @@ impl<'t> SuffixTree<'t> {
         node.pos = pos;
     }
     #[inline]
-    fn lcp_rec_inner<T: SaType<T>>(&self, node_idx: NodeIdx, len: usize, prev_len: &mut usize, lcp: &mut Vec<T>) {
+    fn lcp_rec_inner<T: SuffixIndices<T>>(&self, node_idx: NodeIdx, len: usize, prev_len: &mut usize, lcp: &mut Vec<T>) {
         let node = self.node(node_idx);
         if node.children.is_empty() {
             lcp.push(T::try_from(*prev_len).ok().unwrap());

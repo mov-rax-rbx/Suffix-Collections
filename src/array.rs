@@ -46,7 +46,7 @@ use alloc::borrow::{Cow, ToOwned};
 use core::{str, slice::Iter, option::Option, cmp::{max, Eq}};
 
 use crate::{bit::*, tree::*, lcp::*, canonic_word};
-use build_suffix_array::SaType;
+use build_suffix_array::SuffixIndices;
 
 #[repr(transparent)]
 struct BitSliceMut<'t>(&'t mut [Byte]);
@@ -84,12 +84,12 @@ impl<'t> Bit for BitSlice<'t> {
 }
 
 #[derive(Debug, Clone)]
-pub struct SuffixArray<'sa, T: SaType<T>> {
+pub struct SuffixArray<'sa, T: SuffixIndices<T>> {
     word: Cow<'sa, str>,
     sa: Vec<T>
 }
 
-impl<'sa, T: SaType<T>> IntoIterator for SuffixArray<'sa, T> {
+impl<'sa, T: SuffixIndices<T>> IntoIterator for SuffixArray<'sa, T> {
     type Item = T;
     type IntoIter = IntoIter<Self::Item>;
 
@@ -98,7 +98,7 @@ impl<'sa, T: SaType<T>> IntoIterator for SuffixArray<'sa, T> {
     }
 }
 
-impl<'sa, T: SaType<T>> IntoIterator for &'sa SuffixArray<'sa, T> {
+impl<'sa, T: SuffixIndices<T>> IntoIterator for &'sa SuffixArray<'sa, T> {
     type Item = &'sa T;
     type IntoIter = Iter<'sa, T>;
 
@@ -107,7 +107,7 @@ impl<'sa, T: SaType<T>> IntoIterator for &'sa SuffixArray<'sa, T> {
     }
 }
 
-impl<'sa, T: SaType<T>> SuffixArray<'sa, T> {
+impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     const DICT_SIZE: usize = 256;
 
     /// Construct suffix array recursive. Complexity O(n).
@@ -684,7 +684,7 @@ fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
     start
 }
 
-fn count_eq<T: Eq, P: SaType<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P {
+fn count_eq<T: Eq, P: SuffixIndices<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P {
     while acc.to_usize() < cmp1.len() && acc.to_usize() < cmp2.len()
     // safe by previous check
         && unsafe { *cmp1.get_unchecked(acc.to_usize()) == *cmp2.get_unchecked(acc.to_usize()) }
@@ -694,7 +694,7 @@ fn count_eq<T: Eq, P: SaType<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P {
     acc
 }
 
-fn to_suffix_array_rec_inner<T: SaType<T>>(tree: &SuffixTree, node_idx: NodeIdx, len: usize, sa: &mut Vec<T>) {
+fn to_suffix_array_rec_inner<T: SuffixIndices<T>>(tree: &SuffixTree, node_idx: NodeIdx, len: usize, sa: &mut Vec<T>) {
     let node = tree.node(node_idx);
     if node.children().is_empty() {
         sa.push(T::try_from(node.pos() - len).ok().unwrap());
@@ -787,7 +787,7 @@ pub(crate) mod build_suffix_array {
     use core::convert::TryFrom;
     use super::*;
 
-    pub trait SaType<T>:
+    pub trait SuffixIndices<T>:
         AddAssign + Add<Output = T>
         + SubAssign + Sub<Output = T>
         + ToUsize + Zero + One + Max
@@ -795,10 +795,10 @@ pub(crate) mod build_suffix_array {
         + Clone + Copy + Default
     {}
 
-    macro_rules! impl_SaType {
+    macro_rules! impl_SuffixIndices {
         ($($tp:ident),* $(,)?) => {
             $(
-                impl SaType<$tp> for $tp {}
+                impl SuffixIndices<$tp> for $tp {}
             )*
         };
     }
@@ -806,7 +806,7 @@ pub(crate) mod build_suffix_array {
     impl_One!(u8, u16, u32, u64, usize);
     impl_Zero!(u8, u16, u32, u64, usize);
     impl_Max!(u8, u16, u32, u64, usize);
-    impl_SaType!(u8, u16, u32, u64, usize);
+    impl_SuffixIndices!(u8, u16, u32, u64, usize);
 
     const LEN_NAIVE_SORT: usize = 50;
     #[inline]
@@ -817,7 +817,7 @@ pub(crate) mod build_suffix_array {
             s_idx.get_unchecked(a.to_usize()..).cmp(&s_idx.get_unchecked(b.to_usize()..)));
     }
     #[inline]
-    unsafe fn create_bucket_dict<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn create_bucket_dict<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         s_idx: &[T],
         offset_dict: &mut [(Scalar, Scalar)]
     ) {
@@ -830,7 +830,7 @@ pub(crate) mod build_suffix_array {
         });
     }
     #[inline]
-    unsafe fn add_lms_to_end<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn add_lms_to_end<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         s_idx       : &[T],
         sa_lms      : &[Scalar],
         offset_dict : &mut [(Scalar, Scalar)],
@@ -850,7 +850,7 @@ pub(crate) mod build_suffix_array {
     }
     #[allow(non_snake_case)]
     #[inline]
-    unsafe fn add_L_to_start<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn add_L_to_start<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         s_idx       : &[T],
         t           : &impl Bit,
         offset_dict : &mut [(Scalar, Scalar)],
@@ -876,7 +876,7 @@ pub(crate) mod build_suffix_array {
     }
     #[allow(non_snake_case)]
     #[inline]
-    unsafe fn add_S_to_end<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn add_S_to_end<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         s_idx       : &[T],
         t           : &impl Bit,
         offset_dict : &mut [(Scalar, Scalar)],
@@ -901,7 +901,7 @@ pub(crate) mod build_suffix_array {
         }
     }
     #[inline]
-    unsafe fn induced_sort<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn induced_sort<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         s_idx       : &[T],
         sa_lms      : &[Scalar],
         t           : &impl Bit,
@@ -929,7 +929,7 @@ pub(crate) mod build_suffix_array {
         });
     }
     #[inline]
-    fn calc_lms<Scalar: SaType<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar> {
+    fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar> {
         (0..len - 1).into_iter().filter(|&i| {
             unsafe { t.get_unchecked(i) == TSuff::L as u8 && t.get_unchecked(i + 1) == TSuff::S as u8 }
         }).map(|i| Scalar::try_from(i + 1).ok().unwrap()).collect::<Vec<_>>()
@@ -956,7 +956,7 @@ pub(crate) mod build_suffix_array {
         false
     }
     #[inline]
-    unsafe fn create_new_str<T: Ord, Scalar: SaType<Scalar>>(
+    unsafe fn create_new_str<T: Ord, Scalar: SuffixIndices<Scalar>>(
         s_idx       : &[T],
         alphabet    : &mut [Scalar],
         sort_sublms : &[Scalar],
@@ -988,7 +988,7 @@ pub(crate) mod build_suffix_array {
         idx_lms.iter().map(|&x| *alphabet.get_unchecked(x.to_usize())).collect()
     }
     #[inline]
-    unsafe fn pack_lms<T: ToUsize + Copy, Scalar: SaType<Scalar>>(
+    unsafe fn pack_lms<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
         idx_lms     : &[Scalar],
         s_idx       : &[T],
         offset_dict : &mut [(Scalar, Scalar)]
@@ -1016,7 +1016,7 @@ pub(crate) mod build_suffix_array {
             .map(|&(_, y)| *idx_lms.get_unchecked(y.to_usize())).collect()
     }
     #[inline]
-    unsafe fn sort_lms_in_new_str<T: ToUsize + Ord + Copy, Scalar: SaType<Scalar>, BMut: BitMut>(
+    unsafe fn sort_lms_in_new_str<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
         new_s_idx   : &[T],
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
@@ -1048,7 +1048,7 @@ pub(crate) mod build_suffix_array {
         src.iter_mut().for_each(|x| *x = T::default());
     }
     #[inline]
-    unsafe fn sort_lms<T: ToUsize + Ord + Copy, Scalar: SaType<Scalar>, BMut: BitMut>(
+    unsafe fn sort_lms<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
         s_idx       : &[T],
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
@@ -1090,7 +1090,7 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array<T: ToUsize + Ord + Copy, Scalar: SaType<Scalar>, BMut: BitMut>(
+    pub(crate) unsafe fn suffix_array<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
         s_idx       : &[T],
         offset_dict : &mut [(Scalar, Scalar)],
         tmp_end_s   : &mut [Scalar],
@@ -1113,7 +1113,7 @@ pub(crate) mod build_suffix_array {
         induced_sort(s_idx, &sa_lms, t, offset_dict, tmp_end_s, sa, sa_init);
     }
 
-    enum TState<Scalar: SaType<Scalar>> {
+    enum TState<Scalar: SuffixIndices<Scalar>> {
         Rec (
             Vec<Scalar>,
         ),
@@ -1139,7 +1139,7 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    pub(crate) unsafe fn suffix_array_stack<T: ToUsize + Ord + Copy, Scalar: SaType<Scalar>, BMut: BitMut, B: Bit>(
+    pub(crate) unsafe fn suffix_array_stack<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut, B: Bit>(
         s_idx          : &[T],
         offset_dict    : &mut [(Scalar, Scalar)],
         tmp_end_s      : &mut [Scalar],
@@ -1207,7 +1207,7 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    unsafe fn suffix_array_stack_inner<Scalar: SaType<Scalar>, BMut: BitMut, B: Bit>(
+    unsafe fn suffix_array_stack_inner<Scalar: SuffixIndices<Scalar>, BMut: BitMut, B: Bit>(
         offset_dict     : &mut [(Scalar, Scalar)],
         tmp_end_s       : &mut [Scalar],
         sa              : &mut [Scalar],

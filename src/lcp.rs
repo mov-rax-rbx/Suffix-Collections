@@ -3,12 +3,12 @@
 use core::slice::{Iter, SliceIndex};
 use core::ops::Index;
 use alloc::vec::Vec;
-use crate::array::build_suffix_array::SaType;
+use crate::array::build_suffix_array::SuffixIndices;
 
 #[derive(Debug, Clone)]
 #[repr(transparent)]
-pub struct LCP<T: SaType<T>>(Vec<T>);
-impl<T: SaType<T>> LCP<T> {
+pub struct LCP<T: SuffixIndices<T>>(Vec<T>);
+impl<T: SuffixIndices<T>> LCP<T> {
 
     pub(crate) fn new(lcp: Vec<T>) -> Self {
         Self(lcp)
@@ -99,7 +99,7 @@ impl<T: SaType<T>> LCP<T> {
     }
 }
 
-impl<T: SaType<T>, I: SliceIndex<[T]>> Index<I> for LCP<T> {
+impl<T: SuffixIndices<T>, I: SliceIndex<[T]>> Index<I> for LCP<T> {
     type Output = I::Output;
 
     #[inline]

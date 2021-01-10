@@ -91,7 +91,7 @@ pub(crate) mod bit;
 use alloc::borrow::{Cow, ToOwned};
 use alloc::vec::Vec;
 use core::str;
-fn canonic_word<'t>(word: &'t str) -> Cow<'t, str> {
+fn canonic_word(word: &str) -> Cow<'_, str> {
     if word.as_bytes().last() == Some(&0) {
         Cow::from(word)
     } else {
@@ -101,7 +101,7 @@ fn canonic_word<'t>(word: &'t str) -> Cow<'t, str> {
                     .as_bytes()
                     .iter()
                     .chain(&[0])
-                    .map(|&x| x)
+                    .copied()
                     .collect::<Vec<_>>(),
             )
             .unwrap()

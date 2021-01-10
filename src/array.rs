@@ -172,7 +172,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             );
         }
 
-        Self { word: word, sa: sa }
+        Self { word, sa }
     }
 
     /// Construct suffix array not recursive. Complexity O(n).
@@ -232,7 +232,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             );
         }
 
-        Self { word: word, sa: sa }
+        Self { word, sa }
     }
 
     /// Construct suffix array recursive. Complexity O(n)
@@ -291,7 +291,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             );
         }
 
-        Self { word: word, sa: sa }
+        Self { word, sa }
     }
 
     /// Construct suffix array not recursive. Complexity O(n)
@@ -351,7 +351,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             );
         }
 
-        Self { word: word, sa: sa }
+        Self { word, sa }
     }
 
     /// Construct suffix array from suffix tree not recursive. Complexity O(n)
@@ -938,12 +938,9 @@ pub(crate) mod build_suffix_array {
             .rev()
             .zip((0..s_idx.len() - 1).into_iter().rev())
             .for_each(|(s_idx, i)| {
-                if s_idx[0] > s_idx[1] {
+                if s_idx[0] > s_idx[1]
+                    || (s_idx[0] == s_idx[1] && t.get_unchecked(i + 1) == TSuff::L as u8) {
                     t.set_unchecked(i);
-                } else if s_idx[0] == s_idx[1] {
-                    if t.get_unchecked(i + 1) == TSuff::L as u8 {
-                        t.set_unchecked(i);
-                    }
                 }
             });
     }
@@ -1101,7 +1098,7 @@ pub(crate) mod build_suffix_array {
         } else if lms_is_unique(offset_dict) {
             unpack_lms(idx_lms, offset_dict)
         } else if idx_lms.len() <= LEN_NAIVE_SORT {
-            let mut sort_lms = idx_lms.clone().to_vec();
+            let mut sort_lms = idx_lms.to_vec();
             // safe because max(idx_lms) < s_idx.len()
             naive_sort(&mut sort_lms, s_idx);
             sort_lms

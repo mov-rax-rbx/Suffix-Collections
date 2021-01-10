@@ -66,6 +66,19 @@ impl<T: SuffixIndices<T>> LCP<T> {
         self.0.len()
     }
 
+    /// Returns `true` if the `LCP` contains no elements.
+    /// ```
+    /// use suff_collections::{array::*, lcp::*};
+    ///
+    /// let sa = SuffixArray::<usize>::new("word");
+    /// let lcp = sa.lcp();
+    /// assert_eq!(lcp.is_empty(), false);
+    /// ```
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// Return value by index. In debug safe. In release disable bound checks
     /// ```
     /// use suff_collections::{array::*, lcp::*};

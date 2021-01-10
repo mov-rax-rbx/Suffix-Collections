@@ -433,7 +433,7 @@ impl<'t> SuffixTree<'t> {
         for (i, x) in self.v.iter().enumerate() {
             let node_name = &self.word[x.pos..x.pos + x.len];
             let child = &x.children;
-            for (_, &node_idx) in child {
+            for &node_idx in child.values() {
                 let start = self.node(node_idx).pos;
                 let end = start + self.node(node_idx).len;
                 let label_name = self.word.as_bytes()[start] as char;
@@ -450,20 +450,17 @@ impl<'t> SuffixTree<'t> {
                     end - start
                 ))?;
             }
-            match x.link {
-                Some(link_idx) => {
-                    let start = self.node(link_idx).pos;
-                    let end = start + self.node(link_idx).len;
-                    let link_name = &self.word[start..end];
-                    f.write_fmt(format_args!(
-                        "    _{}_{} -> _{}_{} [style=dotted]\n",
-                        i,
-                        node_name,
-                        link_idx.unwrap(),
-                        link_name
-                    ))?;
-                }
-                None => (),
+            if let Some(link_idx) = x.link {
+                let start = self.node(link_idx).pos;
+                let end = start + self.node(link_idx).len;
+                let link_name = &self.word[start..end];
+                f.write_fmt(format_args!(
+                    "    _{}_{} -> _{}_{} [style=dotted]\n",
+                    i,
+                    node_name,
+                    link_idx.unwrap(),
+                    link_name
+                ))?;
             }
         }
         f.write_str("}")?;
@@ -609,9 +606,9 @@ impl<'t> SuffixTree<'t> {
         // if s.edge_pos >= self.word.len() then algorithm is done
         if unsafe { *self.word.as_bytes().get_unchecked(s.edge_pos) } == ch {
             s.edge_pos += 1;
-            return Transfer::Succes;
+            Transfer::Succes
         } else {
-            return Transfer::StopInEdge(self, s, ch);
+            Transfer::StopInEdge(self, s, ch)
         }
     }
     #[inline]
@@ -736,7 +733,7 @@ impl<'t> SuffixTree<'t> {
             *prev_len = len;
             return;
         }
-        for (_, &child) in &node.children {
+        for &child in node.children.values() {
             self.lcp_rec_inner(child, len + node.len, prev_len, lcp);
         }
         *prev_len -= node.len;

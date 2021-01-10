@@ -52,12 +52,7 @@ impl<'b> BitMut for BitArrMut<'b> {
     unsafe fn range_to_mut(&mut self, end: usize) -> Self {
         debug_assert!(num_to_byte_pack(end) <= self.0.len());
         // safe cast because Rust can't deduce that we won't return multiple references to the same value
-        Self(
-            &mut *(self
-                .0
-                .get_unchecked_mut(..num_to_byte_pack(end))
-                as *mut _),
-        )
+        Self(&mut *(self.0.get_unchecked_mut(..num_to_byte_pack(end)) as *mut _))
     }
     #[inline]
     unsafe fn set_unchecked(&mut self, n: usize) {

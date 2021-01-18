@@ -1238,3 +1238,28 @@ fn test_lcp_suffix_array_utf8_4() {
             .collect::<Vec<_>>()
     );
 }
+
+#[test]
+#[should_panic]
+fn test_suffix_array_overflow_1() {
+    let line = "a".repeat(u8::MAX as usize);
+    let _ = SuffixArray::<u8>::new(&line).lcp().owned().to_vec();
+}
+#[test]
+#[should_panic]
+fn test_suffix_array_overflow_2() {
+    let line = "a".repeat(u8::MAX as usize);
+    let _ = SuffixArray::<u8>::new_compress(&line).lcp().owned().to_vec();
+}
+#[test]
+#[should_panic]
+fn test_suffix_array_overflow_3() {
+    let line = "a".repeat(u8::MAX as usize);
+    let _ = SuffixArray::<u8>::new_stack(&line).lcp().owned().to_vec();
+}
+#[test]
+#[should_panic]
+fn test_suffix_array_overflow_4() {
+    let line = "a".repeat(u8::MAX as usize);
+    let _ = SuffixArray::<u8>::new_stack_compress(&line).lcp().owned().to_vec();
+}

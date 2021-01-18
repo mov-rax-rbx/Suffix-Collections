@@ -51,7 +51,7 @@ use core::{
 };
 
 use crate::{bit::*, canonic_word, lcp::*, tree::*};
-use build_suffix_array::SuffixIndices;
+use build_suffix_array::{SuffixIndices, Max};
 
 #[repr(transparent)]
 struct BitSliceMut<'t>(&'t mut [Byte]);
@@ -129,9 +129,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     /// At the end of the line should hit '\0'.
     /// If there is no '\0' at the end then the line will be copied and added '\0' to the end.
     /// Otherwise, the value will be taken by reference.
-    /// If word.len() > Type::MAX then panic.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if word.len() > T::MAX.
     pub fn new_compress(word: &'sa str) -> Self {
-        assert!(word.len() < build_suffix_array::Max::max());
+        assert!(word.len() < <T as Max>::max().to_usize());
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),
@@ -189,9 +192,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     /// At the end of the line should hit '\0'.
     /// If there is no '\0' at the end then the line will be copied and added '\0' to the end.
     /// Otherwise, the value will be taken by reference.
-    /// If word.len() > Type::MAX then panic
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if word.len() > T::MAX.
     pub fn new_stack_compress(word: &'sa str) -> Self {
-        assert!(word.len() < build_suffix_array::Max::max());
+        assert!(word.len() < <T as Max>::max().to_usize());
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),
@@ -248,9 +254,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     /// At the end of the line should hit '\0'.
     /// If there is no '\0' at the end then the line will be copied and added '\0' to the end.
     /// Otherwise, the value will be taken by reference.
-    /// If word.len() > Type::MAX then panic.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if word.len() > T::MAX.
     pub fn new(word: &'sa str) -> Self {
-        assert!(word.len() < build_suffix_array::Max::max());
+        assert!(word.len() < <T as Max>::max().to_usize());
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),
@@ -307,9 +316,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     /// At the end of the line should hit '\0'.
     /// If there is no '\0' at the end then the line will be copied and added '\0' to the end.
     /// Otherwise, the value will be taken by reference.
-    /// If word.len() > Type::MAX then panic
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if word.len() > T::MAX.
     pub fn new_stack(word: &'sa str) -> Self {
-        assert!(word.len() < build_suffix_array::Max::max());
+        assert!(word.len() < <T as Max>::max().to_usize());
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),

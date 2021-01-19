@@ -51,12 +51,12 @@ use core::{
 };
 
 use crate::{bit::*, canonic_word, lcp::*, tree::*};
-use build_suffix_array::{SuffixIndices, Max};
+use build_suffix_array::{Max, SuffixIndices};
 
 #[repr(transparent)]
-struct BitSliceMut<'t>(&'t mut [Byte]);
+struct ByteSliceMut<'t>(&'t mut [Byte]);
 
-impl<'t> BitMut for BitSliceMut<'t> {
+impl<'t> BitMut for ByteSliceMut<'t> {
     #[inline]
     unsafe fn set_unchecked(&mut self, idx: usize) {
         *self.0.get_unchecked_mut(idx) = Byte(1);
@@ -72,7 +72,11 @@ impl<'t> BitMut for BitSliceMut<'t> {
     }
 }
 
-impl<'t> Bit for BitSliceMut<'t> {
+impl<'t> Bit for ByteSliceMut<'t> {
+    #[inline]
+    unsafe fn raw(&self) -> &[Byte] {
+        &*self.0
+    }
     #[inline]
     unsafe fn get_unchecked(&self, idx: usize) -> u8 {
         self.0.get_unchecked(idx).0
@@ -80,8 +84,12 @@ impl<'t> Bit for BitSliceMut<'t> {
 }
 
 #[repr(transparent)]
-struct BitSlice<'t>(&'t [Byte]);
-impl<'t> Bit for BitSlice<'t> {
+struct ByteSlice<'t>(&'t [Byte]);
+impl<'t> Bit for ByteSlice<'t> {
+    #[inline]
+    unsafe fn raw(&self) -> &[Byte] {
+        &*self.0
+    }
     #[inline]
     unsafe fn get_unchecked(&self, idx: usize) -> u8 {
         self.0.get_unchecked(idx).0
@@ -169,9 +177,6 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut tmp_end_s,
                 &mut sa,
                 &mut BitArrMut(&mut sa_init),
-                |len| Byte::vec(len),
-                // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitArrMut(&mut *(bytes as *mut _)),
             );
         }
 
@@ -231,10 +236,6 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut tmp_end_s,
                 &mut sa,
                 &mut BitArrMut(&mut sa_init),
-                |len| Byte::vec(len),
-                // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitArrMut(&mut *(bytes as *mut _)),
-                |bytes| BitArr(&*(bytes as *const _)),
             );
         }
 
@@ -293,10 +294,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut offset_dict,
                 &mut tmp_end_s,
                 &mut sa,
-                &mut BitSliceMut(&mut sa_init),
-                |len| vec![Byte::default(); len],
-                // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitSliceMut(&mut *(bytes as *mut _)),
+                &mut ByteSliceMut(&mut sa_init),
             );
         }
 
@@ -355,11 +353,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 &mut offset_dict,
                 &mut tmp_end_s,
                 &mut sa,
-                &mut BitSliceMut(&mut sa_init),
-                |len| vec![Byte::default(); len],
-                // safe cast because Rust can't deduce that we won't return multiple references to the same value
-                |bytes| BitSliceMut(&mut *(bytes as *mut _)),
-                |bytes| BitSlice(&*(bytes as *const _)),
+                &mut ByteSliceMut(&mut sa_init),
             );
         }
 
@@ -827,6 +821,102 @@ pub(crate) mod build_suffix_array {
     impl_Max!(u8, u16, u32, u64, usize);
     impl_SuffixIndices!(u8, u16, u32, u64, usize);
 
+    pub(crate) trait Layout: BitMut {
+        type NoMut: Bit;
+
+        fn ret_bytes(len: usize) -> Vec<Byte>;
+        fn to_bits(bytes: &mut [Byte]) -> Self;
+        fn to_bits_no_mut(bytes: &[Byte]) -> Self::NoMut;
+        fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar>;
+    }
+
+    impl<'t> Layout for ByteSliceMut<'t> {
+        type NoMut = ByteSlice<'t>;
+        #[inline]
+        fn ret_bytes(len: usize) -> Vec<Byte> {
+            vec![Byte::default(); len]
+        }
+        #[inline]
+        fn to_bits(bytes: &mut [Byte]) -> Self {
+            // safe cast because Rust can't deduce that we won't return multiple references to the same value
+            ByteSliceMut(unsafe { &mut *(bytes as *mut _) })
+        }
+        #[inline]
+        fn to_bits_no_mut(bytes: &[Byte]) -> Self::NoMut {
+            // safe cast because Rust can't deduce that we won't return multiple references to the same value
+            ByteSlice(unsafe { &*(bytes as *const _) })
+        }
+        #[inline]
+        fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, _: usize) -> Vec<Scalar> {
+            // safe because in the case of ByteSlice Byte stores the type TSuff completely
+            unsafe { t.raw() }
+                .windows(2)
+                .enumerate()
+                .filter(|&(_, x)| x[0].0 == TSuff::L as u8 && x[1].0 == TSuff::S as u8)
+                .map(|(i, _)| Scalar::try_from(i + 1).ok().unwrap())
+                .collect::<Vec<_>>()
+        }
+    }
+
+    impl<'t> Layout for BitArrMut<'t> {
+        type NoMut = BitArr<'t>;
+        #[inline]
+        fn ret_bytes(len: usize) -> Vec<Byte> {
+            Byte::vec(len)
+        }
+        #[inline]
+        fn to_bits(bytes: &mut [Byte]) -> Self {
+            // safe cast because Rust can't deduce that we won't return multiple references to the same value
+            BitArrMut(unsafe { &mut *(bytes as *mut _) })
+        }
+        #[inline]
+        fn to_bits_no_mut(bytes: &[Byte]) -> Self::NoMut {
+            // safe cast because Rust can't deduce that we won't return multiple references to the same value
+            BitArr(unsafe { &*(bytes as *const _) })
+        }
+        #[inline]
+        fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar> {
+            // like this but bit unfolding
+            // (0..len - 1)
+            //     .into_iter()
+            //     .filter(|&x| unsafe {
+            //         t.get_unchecked(x) == TSuff::L as u8 && t.get_unchecked(x + 1) == TSuff::S as u8
+            //     })
+            //     .map(|x| Scalar::try_from(x + 1).ok().unwrap())
+            //     .collect::<Vec<_>>()
+
+            let mut res = Vec::new();
+            let mut i = 0;
+            // safe because the next bits are unfolding
+            for t in unsafe { t.raw() }.windows(2) {
+                for bit_idx in 0..7 {
+                    if unsafe {
+                        t[0].get_unchecked(bit_idx) == TSuff::L as u8
+                            && t[0].get_unchecked(bit_idx + 1) == TSuff::S as u8
+                    } {
+                        res.push(Scalar::try_from(i + 1).ok().unwrap());
+                    }
+                    i += 1;
+                }
+                if unsafe {
+                    t[0].get_unchecked(7) == TSuff::L as u8
+                        && t[1].get_unchecked(0) == TSuff::S as u8
+                } {
+                    res.push(Scalar::try_from(i + 1).ok().unwrap());
+                }
+                i += 1;
+            }
+            (i..len - 1).into_iter().for_each(|x| {
+                if unsafe {
+                    t.get_unchecked(x) == TSuff::L as u8 && t.get_unchecked(x + 1) == TSuff::S as u8
+                } {
+                    res.push(Scalar::try_from(x + 1).ok().unwrap());
+                }
+            });
+            res
+        }
+    }
+
     const LEN_NAIVE_SORT: usize = 50;
     #[inline]
     unsafe fn naive_sort<T: ToUsize + Ord + Copy, P: Ord>(sort: &mut [T], s_idx: &[P]) {
@@ -840,8 +930,8 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn create_bucket_dict<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        offset_dict : &mut [(Scalar, Scalar)],
+        s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
     ) {
         // safe because max(s_idx) < offset_dict.len()
         s_idx
@@ -855,12 +945,12 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn add_lms_to_end<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        sa_lms      : &[Scalar],
-        offset_dict : &mut [(Scalar, Scalar)],
-        tmp_end_s   : &mut [Scalar],
-        sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut,
+        s_idx: &[T],
+        sa_lms: &[Scalar],
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut impl BitMut,
     ) {
         offset_dict
             .iter()
@@ -879,11 +969,11 @@ pub(crate) mod build_suffix_array {
     #[allow(non_snake_case)]
     #[inline]
     unsafe fn add_L_to_start<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        t           : &impl Bit,
-        offset_dict : &mut [(Scalar, Scalar)],
-        sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut,
+        s_idx: &[T],
+        t: &impl Bit,
+        offset_dict: &mut [(Scalar, Scalar)],
+        sa: &mut [Scalar],
+        sa_init: &mut impl BitMut,
     ) {
         for x in 0..sa.len() {
             // safe x < sa.len() && sa_init.len() == sa.len()
@@ -905,11 +995,11 @@ pub(crate) mod build_suffix_array {
     #[allow(non_snake_case)]
     #[inline]
     unsafe fn add_S_to_end<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        t           : &impl Bit,
-        offset_dict : &mut [(Scalar, Scalar)],
-        sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut,
+        s_idx: &[T],
+        t: &impl Bit,
+        offset_dict: &mut [(Scalar, Scalar)],
+        sa: &mut [Scalar],
+        sa_init: &mut impl BitMut,
     ) {
         for x in (0..sa.len()).rev() {
             // safe x < sa.len() && sa_init.len() == sa.len()
@@ -930,13 +1020,13 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn induced_sort<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        sa_lms      : &[Scalar],
-        t           : &impl Bit,
-        offset_dict : &mut [(Scalar, Scalar)],
-        tmp_end_s   : &mut [Scalar],
-        sa          : &mut [Scalar],
-        sa_init     : &mut impl BitMut,
+        s_idx: &[T],
+        sa_lms: &[Scalar],
+        t: &impl Bit,
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut impl BitMut,
     ) {
         create_bucket_dict(s_idx, offset_dict);
         add_lms_to_end(s_idx, sa_lms, offset_dict, tmp_end_s, sa, sa_init);
@@ -951,20 +1041,11 @@ pub(crate) mod build_suffix_array {
             .zip((0..s_idx.len() - 1).into_iter().rev())
             .for_each(|(s_idx, i)| {
                 if s_idx[0] > s_idx[1]
-                    || (s_idx[0] == s_idx[1] && t.get_unchecked(i + 1) == TSuff::L as u8) {
+                    || (s_idx[0] == s_idx[1] && t.get_unchecked(i + 1) == TSuff::L as u8)
+                {
                     t.set_unchecked(i);
                 }
             });
-    }
-    #[inline]
-    fn calc_lms<Scalar: SuffixIndices<Scalar>>(t: &impl Bit, len: usize) -> Vec<Scalar> {
-        (0..len - 1)
-            .into_iter()
-            .filter(|&i| unsafe {
-                t.get_unchecked(i) == TSuff::L as u8 && t.get_unchecked(i + 1) == TSuff::S as u8
-            })
-            .map(|i| Scalar::try_from(i + 1).ok().unwrap())
-            .collect::<Vec<_>>()
     }
     #[inline]
     unsafe fn sublms_is_eq<T: Eq>(s_idx: &[T], t: &impl Bit, x: usize, prev: usize) -> bool {
@@ -990,12 +1071,12 @@ pub(crate) mod build_suffix_array {
         false
     }
     #[inline]
-    unsafe fn create_new_str<T: Ord, Scalar: SuffixIndices<Scalar>>(
-        s_idx       : &[T],
-        alphabet    : &mut [Scalar],
-        sort_sublms : &[Scalar],
-        t           : &impl Bit,
-        idx_lms     : &[Scalar],
+    unsafe fn create_new_str<T: Ord, Scalar: SuffixIndices<Scalar>, BitLayout: Layout>(
+        s_idx: &[T],
+        alphabet: &mut [Scalar],
+        sort_sublms: &[Scalar],
+        t: &BitLayout,
+        idx_lms: &[Scalar],
     ) -> Vec<Scalar> {
         let mut prev = Scalar::try_from(s_idx.len()).ok().unwrap() - Scalar::one();
         // safe prev < alphabet.len() && s_idx.len() <= alphabet.len()
@@ -1025,9 +1106,9 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn pack_lms<T: ToUsize + Copy, Scalar: SuffixIndices<Scalar>>(
-        idx_lms     : &[Scalar],
-        s_idx       : &[T],
-        offset_dict : &mut [(Scalar, Scalar)],
+        idx_lms: &[Scalar],
+        s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
     ) {
         idx_lms.iter().enumerate().for_each(|(i, &x)| {
             // safe max(idx_lms) < s_idx.len() &&
@@ -1043,8 +1124,8 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn unpack_lms<Scalar: Zero + Eq + ToUsize + Copy>(
-        idx_lms     : &[Scalar],
-        offset_dict : &[(Scalar, Scalar)],
+        idx_lms: &[Scalar],
+        offset_dict: &[(Scalar, Scalar)],
     ) -> Vec<Scalar> {
         // safe max(offset_dict) < idx_lms.len()
         offset_dict
@@ -1055,18 +1136,16 @@ pub(crate) mod build_suffix_array {
     }
     #[inline]
     unsafe fn sort_lms_in_new_str<
-        T      : ToUsize + Ord + Copy,
-        Scalar : SuffixIndices<Scalar>,
-        BMut   : BitMut,
+        T: ToUsize + Ord + Copy,
+        Scalar: SuffixIndices<Scalar>,
+        BitLayout: Layout,
     >(
-        new_s_idx   : &[T],
-        offset_dict : &mut [(Scalar, Scalar)],
-        tmp_end_s   : &mut [Scalar],
-        sa          : &mut [Scalar],
-        sa_init     : &mut BMut,
-        idx_lms     : &[Scalar],
-        ret_bytes   : impl Fn(usize) -> Vec<Byte>,
-        to_bits     : impl Fn(&mut [Byte]) -> BMut,
+        new_s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut BitLayout,
+        idx_lms: &[Scalar],
     ) -> Vec<Scalar> {
         let new_size = idx_lms.len();
         // safe new_size == idx_lms.len() && max(idx_lms) < s_idx.len() &&
@@ -1078,8 +1157,6 @@ pub(crate) mod build_suffix_array {
             tmp_end_s.get_unchecked_mut(..new_size),
             sa.get_unchecked_mut(..new_size),
             &mut sa_init.range_to_mut(new_size),
-            ret_bytes,
-            to_bits,
         );
         // safe new_size <= sa.len() by previous explanation && max(sa) < idx_lms.len()
         sa.get_unchecked(..new_size)
@@ -1092,16 +1169,18 @@ pub(crate) mod build_suffix_array {
         src.iter_mut().for_each(|x| *x = T::default());
     }
     #[inline]
-    unsafe fn sort_lms<T: ToUsize + Ord + Copy, Scalar: SuffixIndices<Scalar>, BMut: BitMut>(
-        s_idx       : &[T],
-        offset_dict : &mut [(Scalar, Scalar)],
-        tmp_end_s   : &mut [Scalar],
-        sa          : &mut [Scalar],
-        sa_init     : &mut BMut,
-        t           : &mut impl Bit,
-        idx_lms     : &[Scalar],
-        ret_bytes   : impl Fn(usize) -> Vec<Byte>,
-        to_bits     : impl Fn(&mut [Byte]) -> BMut,
+    unsafe fn sort_lms<
+        T: ToUsize + Ord + Copy,
+        Scalar: SuffixIndices<Scalar>,
+        BitLayout: Layout,
+    >(
+        s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut BitLayout,
+        t: &mut BitLayout,
+        idx_lms: &[Scalar],
     ) -> Vec<Scalar> {
         pack_lms(idx_lms, s_idx, offset_dict);
         if idx_lms.len() == 1 {
@@ -1122,16 +1201,7 @@ pub(crate) mod build_suffix_array {
             sa_init.clear();
             clear(offset_dict);
 
-            sort_lms_in_new_str(
-                &new_s_idx,
-                offset_dict,
-                tmp_end_s,
-                sa,
-                sa_init,
-                idx_lms,
-                ret_bytes,
-                to_bits,
-            )
+            sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms)
         } else {
             unreachable!();
         }
@@ -1144,34 +1214,22 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
     pub(crate) unsafe fn suffix_array<
-        T      : ToUsize + Ord + Copy,
-        Scalar : SuffixIndices<Scalar>,
-        BMut   : BitMut,
+        T: ToUsize + Ord + Copy,
+        Scalar: SuffixIndices<Scalar>,
+        BitLayout: Layout,
     >(
-        s_idx       : &[T],
-        offset_dict : &mut [(Scalar, Scalar)],
-        tmp_end_s   : &mut [Scalar],
-        sa          : &mut [Scalar],
-        sa_init     : &mut BMut,
-        ret_bytes   : impl Fn(usize) -> Vec<Byte>,
-        to_bits     : impl Fn(&mut [Byte]) -> BMut,
+        s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut BitLayout,
     ) {
-        let mut bytes = ret_bytes(s_idx.len());
-        let t = &mut to_bits(&mut bytes);
+        let mut bytes = BitLayout::ret_bytes(s_idx.len());
+        let t = &mut BitLayout::to_bits(&mut bytes);
         calc_type(&s_idx, t);
         // lms => ... L S ... (... > <= ...)
-        let idx_lms = calc_lms(t, s_idx.len());
-        let sa_lms = sort_lms(
-            s_idx,
-            offset_dict,
-            tmp_end_s,
-            sa,
-            sa_init,
-            t,
-            &idx_lms,
-            ret_bytes,
-            to_bits,
-        );
+        let idx_lms = BitLayout::calc_lms(t, s_idx.len());
+        let sa_lms = sort_lms(s_idx, offset_dict, tmp_end_s, sa, sa_init, t, &idx_lms);
 
         sa_init.clear();
         clear(offset_dict);
@@ -1197,27 +1255,23 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
     pub(crate) unsafe fn suffix_array_stack<
-        T      : ToUsize + Ord + Copy,
-        Scalar : SuffixIndices<Scalar>,
-        BMut   : BitMut,
-        B      : Bit,
+        T: ToUsize + Ord + Copy,
+        Scalar: SuffixIndices<Scalar>,
+        BitLayout: Layout,
     >(
-        s_idx          : &[T],
-        offset_dict    : &mut [(Scalar, Scalar)],
-        tmp_end_s      : &mut [Scalar],
-        sa             : &mut [Scalar],
-        sa_init        : &mut BMut,
-        ret_bytes      : impl Fn(usize) -> Vec<Byte>,
-        to_bits        : impl Fn(&mut [Byte]) -> BMut,
-        to_bits_no_mut : impl Fn(&[Byte]) -> B,
+        s_idx: &[T],
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut BitLayout,
     ) {
         let mut state_stack = Vec::default();
 
-        let mut slice = ret_bytes(s_idx.len());
-        let mut t = to_bits(&mut slice);
+        let mut slice = BitLayout::ret_bytes(s_idx.len());
+        let mut t = BitLayout::to_bits(&mut slice);
         calc_type(&s_idx, &mut t);
 
-        let idx_lms = calc_lms(&t, s_idx.len());
+        let idx_lms = BitLayout::calc_lms(&t, s_idx.len());
         pack_lms(&idx_lms, &s_idx, offset_dict);
 
         let (res_lms, end_state) = if idx_lms.len() == 1 {
@@ -1236,16 +1290,7 @@ pub(crate) mod build_suffix_array {
             debug_assert!(idx_lms.len() == new_s_idx.len());
             state_stack.push(TState::Rec(new_s_idx));
             (
-                suffix_array_stack_inner(
-                    offset_dict,
-                    tmp_end_s,
-                    sa,
-                    sa_init,
-                    state_stack,
-                    ret_bytes,
-                    to_bits,
-                    to_bits_no_mut,
-                ),
+                suffix_array_stack_inner(offset_dict, tmp_end_s, sa, sa_init, state_stack),
                 NTState::RecEnd,
             )
         } else {
@@ -1277,15 +1322,12 @@ pub(crate) mod build_suffix_array {
     //      sa.len() >= s_idx.len()
     //      sa.len() >= s_init.len()
     //      s_idx.last() == 0
-    unsafe fn suffix_array_stack_inner<Scalar: SuffixIndices<Scalar>, BMut: BitMut, B: Bit>(
-        offset_dict     : &mut [(Scalar, Scalar)],
-        tmp_end_s       : &mut [Scalar],
-        sa              : &mut [Scalar],
-        sa_init         : &mut BMut,
-        mut state_stack : Vec<TState<Scalar>>,
-        ret_bytes       : impl Fn(usize) -> Vec<Byte>,
-        to_bits         : impl Fn(&mut [Byte]) -> BMut,
-        to_bits_no_mut  : impl Fn(&[Byte]) -> B,
+    unsafe fn suffix_array_stack_inner<Scalar: SuffixIndices<Scalar>, BitLayout: Layout>(
+        offset_dict: &mut [(Scalar, Scalar)],
+        tmp_end_s: &mut [Scalar],
+        sa: &mut [Scalar],
+        sa_init: &mut BitLayout,
+        mut state_stack: Vec<TState<Scalar>>,
     ) -> Vec<Scalar> {
         let mut res_lms = Vec::default();
         loop {
@@ -1301,11 +1343,11 @@ pub(crate) mod build_suffix_array {
                             // safe s_idx.len() <= sa_init.len()
                             let sa_init = &mut sa_init.range_to_mut(s_idx.len());
 
-                            let mut slice = ret_bytes(s_idx.len());
-                            let mut t = to_bits(&mut slice);
+                            let mut slice = BitLayout::ret_bytes(s_idx.len());
+                            let mut t = BitLayout::to_bits(&mut slice);
                             calc_type(&s_idx, &mut t);
 
-                            let idx_lms = calc_lms(&t, s_idx.len());
+                            let idx_lms = BitLayout::calc_lms(&t, s_idx.len());
                             pack_lms(&idx_lms, &s_idx, offset_dict);
 
                             if idx_lms.len() == 1 {
@@ -1352,7 +1394,7 @@ pub(crate) mod build_suffix_array {
                             let offset_dict = offset_dict.get_unchecked_mut(..s_idx.len());
                             let sa = sa.get_unchecked_mut(..s_idx.len());
                             let mut sa_init = sa_init.range_to_mut(s_idx.len());
-                            let t = to_bits_no_mut(&t);
+                            let t = BitLayout::to_bits_no_mut(&t);
                             sa_init.clear();
                             clear(offset_dict);
                             // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
@@ -1372,7 +1414,7 @@ pub(crate) mod build_suffix_array {
                             let offset_dict = offset_dict.get_unchecked_mut(..s_idx.len());
                             let sa = sa.get_unchecked_mut(..s_idx.len());
                             let mut sa_init = sa_init.range_to_mut(s_idx.len());
-                            let t = to_bits_no_mut(&t);
+                            let t = BitLayout::to_bits_no_mut(&t);
                             sa_init.clear();
                             clear(offset_dict);
                             // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()

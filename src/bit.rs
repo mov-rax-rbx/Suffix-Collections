@@ -35,12 +35,12 @@ impl Default for Byte {
 }
 
 pub(crate) trait Bit {
+    unsafe fn raw(&self) -> &[Byte];
     unsafe fn get_unchecked(&self, idx: usize) -> u8;
 }
 
 pub(crate) trait BitMut: Bit {
     unsafe fn set_unchecked(&mut self, idx: usize);
-    // unsafe fn unset_unchecked(&mut self, idx: usize);
     unsafe fn range_to_mut(&mut self, to: usize) -> Self;
     fn clear(&mut self);
 }
@@ -67,6 +67,10 @@ impl<'b> BitMut for BitArrMut<'b> {
 
 impl<'b> Bit for BitArrMut<'b> {
     #[inline]
+    unsafe fn raw(&self) -> &[Byte] {
+        &*self.0
+    }
+    #[inline]
     unsafe fn get_unchecked(&self, n: usize) -> u8 {
         debug_assert!(hi(n) < self.0.len());
         self.0.get_unchecked(hi(n)).get_unchecked(lo(n))
@@ -76,6 +80,10 @@ impl<'b> Bit for BitArrMut<'b> {
 #[repr(transparent)]
 pub(crate) struct BitArr<'b>(pub(crate) &'b [Byte]);
 impl<'b> Bit for BitArr<'b> {
+    #[inline]
+    unsafe fn raw(&self) -> &[Byte] {
+        &*self.0
+    }
     #[inline]
     unsafe fn get_unchecked(&self, n: usize) -> u8 {
         debug_assert!(hi(n) < self.0.len());

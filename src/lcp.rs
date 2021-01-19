@@ -88,6 +88,10 @@ impl<T: SuffixIndices<T>> LCP<T> {
     /// // safe because "word".len() >= 0
     /// let len = unsafe { lcp.idx(0) };
     /// ```
+    /// # Safety
+    ///
+    /// Calling this method with an out-of-bounds index is *[undefined behavior]*
+    /// even if the resulting reference is not used.
     #[cfg(debug_assertions)]
     #[inline]
     pub unsafe fn idx<I: SliceIndex<[T]>>(&self, index: I) -> &I::Output {

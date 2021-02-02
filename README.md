@@ -93,10 +93,7 @@ SuffixTree for the word "mississippi"
      let lcp = sa.lcp();
      println!("LCP    index    suffixe's");
      sa.iter().zip(lcp.iter()).for_each(|(&sa, &lcp)| {
-            let suff = String::from_utf8(
-                word.as_bytes()[sa as usize..]
-                .iter().map(|&x|).collect::<Vec<_>>()
-            ).unwrap();
+            let suff = std::str::from_utf8(&word.as_bytes()[sa as usize..]).unwrap();
             println!("{}    {}    {}", lcp, sa, suff);
          }
      );

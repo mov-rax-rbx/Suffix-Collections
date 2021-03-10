@@ -49,7 +49,7 @@ The current implementation builds suffix structures using bytes and does not dec
  // convert online suffix tree to suffix tree
  let st: SuffixTree = ost.finish();
 
- let graph = SuffixTree::new("mississippi").to_graphviz(&mut buff);
+ let graph = SuffixTree::new("mississippi").to_graphviz();
  println!("{}", &graph);
 ```
 SuffixTree for the word "mississippi"

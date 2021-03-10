@@ -4,41 +4,41 @@
 //! # Examples
 //!
 //! ```
-//!     use suff_collections::{array::*, tree::*, lcp::*};
+//! use suff_collections::{array::*, tree::*, lcp::*};
 //!
-//!     // let word = "Some word";
-//!     let word: &str = "Some word\0";
-//!     let find: &str = "word";
+//! // let word = "Some word";
+//! let word: &str = "Some word\0";
+//! let find: &str = "word";
 //!
-//!     // construct suffix array
-//!     // let sa = SuffixArray::<usize>::new_stack(word);
-//!     // let sa = SuffixArray::<u8>::new(word);
-//!     // let sa = SuffixArray::<u16>::new(word);
-//!     // let sa = SuffixArray::<u32>::new(word);
-//!     let sa = SuffixArray::<usize>::new(word);
+//! // construct suffix array
+//! // let sa = SuffixArray::<usize>::new_stack(word);
+//! // let sa = SuffixArray::<u8>::new(word);
+//! // let sa = SuffixArray::<u16>::new(word);
+//! // let sa = SuffixArray::<u32>::new(word);
+//! let sa = SuffixArray::<usize>::new(word);
 //!
-//!     // construct lcp
-//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-//!     let lcp: LCP<usize> = sa.lcp();
+//! // construct lcp
+//! // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//! let lcp: LCP<usize> = sa.lcp();
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     // O(|find| * log(|word|))
-//!     let res: Option<usize> = sa.find(find);
+//! // finds the entry position of the line 'find' in 'word'
+//! // O(|find| * log(|word|))
+//! let res: Option<usize> = sa.find(find);
 //!
-//!     // finds all the entry position of the line 'find' in 'word'
-//!     // O(|find| * log(|word|))
-//!     let res_all: &[usize] = sa.find_all(find);
+//! // finds all the entry position of the line 'find' in 'word'
+//! // O(|find| * log(|word|))
+//! let res_all: &[usize] = sa.find_all(find);
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     // O(|word|)
-//!     let res: Option<usize> = sa.find_big(&sa.lcp(), find);
+//! // finds the entry position of the line 'find' in 'word'
+//! // O(|word|)
+//! let res: Option<usize> = sa.find_big(&sa.lcp(), find);
 //!
-//!     // finds all the entry position of the line 'find' in 'word'
-//!     // O(|word|)
-//!     let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
+//! // finds all the entry position of the line 'find' in 'word'
+//! // O(|word|)
+//! let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
 //!
-//!     // convert suffix array to suffix tree
-//!     let st = SuffixTree::from(sa);
+//! // convert suffix array to suffix tree
+//! let st = SuffixTree::from(sa);
 //! ```
 
 use alloc::borrow::{Cow, ToOwned};
@@ -63,7 +63,8 @@ impl<'t> BitMut for ByteSliceMut<'t> {
     }
     #[inline]
     unsafe fn range_to_mut(&mut self, to: usize) -> Self {
-        // safe cast because Rust can't deduce that we won't return multiple references to the same value
+        // safe cast because Rust can't deduce that we won't
+        // return multiple references to the same value
         Self(&mut *(self.0.get_unchecked_mut(..to) as *mut _))
     }
     #[inline]
@@ -360,80 +361,6 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         Self { word, sa }
     }
 
-    /// Construct suffix array from suffix tree not recursive. Complexity O(n)
-    /// ```
-    /// use suff_collections::{array::*, tree::*};
-    ///
-    /// let st = SuffixTree::new("word\0");
-    /// // let sa = SuffixArray::<u8>::from_stack(st);
-    /// // let sa = SuffixArray::<u16>::from_stack(st);
-    /// // let sa = SuffixArray::<u32>::from_stack(st);
-    /// let sa = SuffixArray::<usize>::from_stack(st);
-    /// ```
-    pub fn from_stack(tree: SuffixTree) -> Self {
-        let mut sa = Vec::with_capacity(tree.word().len());
-        let mut stack = Vec::with_capacity(tree.word().len());
-
-        stack.push(ChildrenIterator {
-            it: tree.root_node().children().iter(),
-            len: 0,
-        });
-
-        while let Some(x) = stack.last_mut() {
-            match x.it.next() {
-                None => {
-                    stack.pop();
-                }
-                Some((_, &i)) => {
-                    let node = tree.node(i);
-                    if node.children().is_empty() {
-                        sa.push(T::try_from(node.pos() - x.len).ok().unwrap());
-                    } else {
-                        let len = x.len + node.len();
-                        stack.push(ChildrenIterator {
-                            it: node.children().iter(),
-                            len: len,
-                        });
-                    }
-                }
-            }
-        }
-
-        // correct because sa is correct suffix array && tree.word().last() == '\0'
-        return Self {
-            word: Cow::from(tree.word().to_owned()),
-            sa: sa,
-        };
-
-        struct ChildrenIterator<I>
-        where
-            I: Iterator,
-        {
-            it: I,
-            len: usize,
-        }
-    }
-
-    /// Recursive construct suffix array from suffix tree. Complexity O(n)
-    /// ```
-    /// use suff_collections::{array::*, tree::*};
-    ///
-    /// let st = SuffixTree::new("word\0");
-    /// // let sa = SuffixArray::<u8>::from_rec(st);
-    /// // let sa = SuffixArray::<u16>::from_rec(st);
-    /// // let sa = SuffixArray::<u32>::from_rec(st);
-    /// let sa = SuffixArray::<usize>::from_rec(st);
-    /// ```
-    pub fn from_rec(tree: SuffixTree) -> Self {
-        let mut sa = Vec::with_capacity(tree.word().len());
-        to_suffix_array_rec_inner(&tree, NodeIdx::root(), 0, &mut sa);
-        // correct because sa is correct suffix array && tree.word().last() == '\0'
-        Self {
-            word: Cow::from(tree.word().to_owned()),
-            sa: sa,
-        }
-    }
-
     /// Return iterator on suffix array
     /// ```
     /// use suff_collections::array::*;
@@ -663,6 +590,76 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     }
 }
 
+impl<T: SuffixIndices<T>> From<SuffixTree<'_>> for SuffixArray<'_, T> {
+    /// Construct suffix array from suffix tree not recursive. Complexity O(n)
+    /// ```
+    /// use suff_collections::{array::*, tree::*};
+    ///
+    /// let st = SuffixTree::new("word\0");
+    /// // let sa = SuffixArray::<u8>::from(st);
+    /// // let sa = SuffixArray::<u16>::from(st);
+    /// // let sa = SuffixArray::<u32>::from(st);
+    /// let sa = SuffixArray::<usize>::from(st);
+    /// ```
+    fn from(tree: SuffixTree) -> Self {
+        let word = if tree.word().as_bytes().last() == Some(&0) {
+            Cow::from(tree.word().to_owned())
+        } else {
+            Cow::from(
+                str::from_utf8(
+                    &tree
+                        .word()
+                        .as_bytes()
+                        .iter()
+                        .chain(&[0])
+                        .copied()
+                        .collect::<Vec<_>>(),
+                )
+                .unwrap()
+                .to_owned(),
+            )
+        };
+
+        let mut sa = Vec::with_capacity(word.len());
+        let mut stack = Vec::with_capacity(word.len());
+
+        stack.push(ChildrenIterator {
+            it: tree.root_node().children().iter(),
+            len: 0,
+        });
+
+        while let Some(x) = stack.last_mut() {
+            match x.it.next() {
+                None => {
+                    stack.pop();
+                }
+                Some((_, &i)) => {
+                    let node = tree.node(i);
+                    if node.children().is_empty() {
+                        sa.push(T::try_from(node.pos() - x.len).ok().unwrap());
+                    } else {
+                        let len = x.len + node.len();
+                        stack.push(ChildrenIterator {
+                            it: node.children().iter(),
+                            len: len,
+                        });
+                    }
+                }
+            }
+        }
+
+        return Self { word: word, sa: sa };
+
+        struct ChildrenIterator<I>
+        where
+            I: Iterator,
+        {
+            it: I,
+            len: usize,
+        }
+    }
+}
+
 fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
     let mut start = 0;
     let mut cnt = if !x.is_empty() { x.len() - 1 } else { 0 };
@@ -688,22 +685,6 @@ fn count_eq<T: Eq, P: SuffixIndices<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P
         acc += P::one();
     }
     acc
-}
-
-fn to_suffix_array_rec_inner<T: SuffixIndices<T>>(
-    tree: &SuffixTree,
-    node_idx: NodeIdx,
-    len: usize,
-    sa: &mut Vec<T>,
-) {
-    let node = tree.node(node_idx);
-    if node.children().is_empty() {
-        sa.push(T::try_from(node.pos() - len).ok().unwrap());
-        return;
-    }
-    for (_, &child) in node.children().iter() {
-        to_suffix_array_rec_inner(&tree, child, len + node.len(), sa);
-    }
 }
 
 // The algorithm of building a suffix array. It uses unsafe blocks to disable

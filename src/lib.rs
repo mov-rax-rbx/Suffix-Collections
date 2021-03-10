@@ -7,41 +7,41 @@
 //! ## Examples
 //!
 //! ```
-//!     use suff_collections::{array::*, tree::*, lcp::*};
+//! use suff_collections::{array::*, tree::*, lcp::*};
 //!
-//!     // let word = "Some word";
-//!     let word: &str = "Some word\0";
-//!     let find: &str = "word";
+//! // let word = "Some word";
+//! let word: &str = "Some word\0";
+//! let find: &str = "word";
 //!
-//!     // construct suffix array
-//!     // let sa = SuffixArray::<usize>::new_stack(word);
-//!     // let sa = SuffixArray::<u8>::new(word);
-//!     // let sa = SuffixArray::<u16>::new(word);
-//!     // let sa = SuffixArray::<u32>::new(word);
-//!     let sa = SuffixArray::<usize>::new(word);
+//! // construct suffix array
+//! // let sa = SuffixArray::<usize>::new_stack(word);
+//! // let sa = SuffixArray::<u8>::new(word);
+//! // let sa = SuffixArray::<u16>::new(word);
+//! // let sa = SuffixArray::<u32>::new(word);
+//! let sa = SuffixArray::<usize>::new(word);
 //!
-//!     // construct lcp
-//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-//!     let lcp: LCP<usize> = sa.lcp();
+//! // construct lcp
+//! // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//! let lcp: LCP<usize> = sa.lcp();
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     // O(|find| * log(|word|))
-//!     let res: Option<usize> = sa.find(find);
+//! // finds the entry position of the line 'find' in 'word'
+//! // O(|find| * log(|word|))
+//! let res: Option<usize> = sa.find(find);
 //!
-//!     // finds all the entry position of the line 'find' in 'word'
-//!     // O(|find| * log(|word|))
-//!     let res_all: &[usize] = sa.find_all(find);
+//! // finds all the entry position of the line 'find' in 'word'
+//! // O(|find| * log(|word|))
+//! let res_all: &[usize] = sa.find_all(find);
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     // O(|word|)
-//!     let res: Option<usize> = sa.find_big(&sa.lcp(), find);
+//! // finds the entry position of the line 'find' in 'word'
+//! // O(|word|)
+//! let res: Option<usize> = sa.find_big(&sa.lcp(), find);
 //!
-//!     // finds all the entry position of the line 'find' in 'word'
-//!     // O(|word|)
-//!     let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
+//! // finds all the entry position of the line 'find' in 'word'
+//! // O(|word|)
+//! let res_all: &[usize] = sa.find_all_big(&sa.lcp(), find);
 //!
-//!     // convert suffix array to suffix tree
-//!     let st = SuffixTree::from(sa);
+//! // convert suffix array to suffix tree
+//! let st = SuffixTree::from(sa);
 //! ```
 
 //! # Suffix Tree
@@ -51,32 +51,30 @@
 //! ## Examples
 //!
 //! ```
-//!     use suff_collections::{array::*, tree::*, lcp::*};
+//! use suff_collections::{array::*, tree::*, lcp::*};
 //!
-//!     // let word = "Some word";
-//!     let word: &str = "Some word\0";
-//!     let find: &str = "word";
+//! // let word = "Some word";
+//! let word: &str = "Some word\0";
+//! let find: &str = "word";
 //!
-//!     // construct suffix tree
-//!     let st: SuffixTree = SuffixTree::new(word);
+//! // construct suffix tree
+//! let st: SuffixTree = SuffixTree::new(word);
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     let res: Option<usize> = st.find(find);
+//! // finds the entry position of the line 'find' in 'word'
+//! let res: Option<usize> = st.find(find);
 //!
-//!     // construct lcp
-//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-//!     // let lcp: LCP<u8> = st.lcp_stack::<u8>();
-//!     // let lcp: LCP<u16> = st.lcp_stack::<u16>();
-//!     // let lcp: LCP<u32> = st.lcp_stack::<u32>();
-//!     // let lcp: LCP<usize> = st.lcp_stack::<usize>();
-//!     let lcp: LCP<usize> = st.lcp_rec::<usize>();
+//! // construct lcp
+//! // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//! // let lcp: LCP<u8> = st.lcp::<u8>();
+//! // let lcp: LCP<u16> = st.lcp::<u16>();
+//! // let lcp: LCP<u32> = st.lcp::<u32>();
+//! let lcp: LCP<usize> = st.lcp::<usize>();
 //!
-//!     // convert suffix tree to suffix array
-//!     // let sa = SuffixArray::<u8>::from_stack(st);
-//!     // let sa = SuffixArray::<u16>::from_stack(st);
-//!     // let sa = SuffixArray::<u32>::from_stack(st);
-//!     // let sa = SuffixArray::<usize>::from_stack(st);
-//!     let sa = SuffixArray::<usize>::from_rec(st);
+//! // convert suffix tree to suffix array
+//! // let sa = SuffixArray::<u8>::from(st);
+//! // let sa = SuffixArray::<u16>::from(st);
+//! // let sa = SuffixArray::<u32>::from(st);
+//! let sa = SuffixArray::<usize>::from(st);
 //! ```
 
 #![no_std]

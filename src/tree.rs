@@ -4,74 +4,38 @@
 //! # Examples
 //!
 //! ```
-//!     use suff_collections::{array::*, tree::*, lcp::*};
+//! use suff_collections::{array::*, tree::*, lcp::*};
 //!
-//!     // let word = "Some word";
-//!     let word: &str = "Some word\0";
-//!     let find: &str = "word";
+//! let word: &str = "Some word";
+//! let find: &str = "word";
 //!
-//!     // construct suffix tree
-//!     let st: SuffixTree = SuffixTree::new(word);
+//! // construct suffix tree
+//! let st: SuffixTree = SuffixTree::new(word);
 //!
-//!     // finds the entry position of the line 'find' in 'word'
-//!     let res: Option<usize> = st.find(find);
+//! // finds the entry position of the line 'find' in 'word'
+//! let res: Option<usize> = st.find(find);
 //!
-//!     // construct lcp
-//!     // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
-//!     // let lcp: LCP<u8> = st.lcp_stack::<u8>();
-//!     // let lcp: LCP<u16> = st.lcp_stack::<u16>();
-//!     // let lcp: LCP<u32> = st.lcp_stack::<u32>();
-//!     // let lcp: LCP<usize> = st.lcp_stack::<usize>();
-//!     let lcp: LCP<usize> = st.lcp_rec::<usize>();
+//! // construct lcp
+//! // lcp[i] = max_pref(sa[i], sa[i - 1]) && lcp.len() == sa.len()
+//! // let lcp: LCP<u8> = st.lcp::<u8>();
+//! // let lcp: LCP<u16> = st.lcp::<u16>();
+//! // let lcp: LCP<u32> = st.lcp::<u32>();
+//! let lcp: LCP<usize> = st.lcp::<usize>();
 //!
-//!     // convert suffix tree to suffix array
-//!     // let sa = SuffixArray::<u8>::from_stack(st);
-//!     // let sa = SuffixArray::<u16>::from_stack(st);
-//!     // let sa = SuffixArray::<u32>::from_stack(st);
-//!     // let sa = SuffixArray::<usize>::from_stack(st);
-//!     let sa = SuffixArray::<usize>::from_rec(st);
+//! // convert suffix tree to suffix array
+//! // let sa = SuffixArray::<u8>::from(st);
+//! // let sa = SuffixArray::<u16>::from(st);
+//! // let sa = SuffixArray::<u32>::from(st);
+//! let sa = SuffixArray::<usize>::from(st);
 //! ```
 
-// TODO: maybe migration to DOP (suffix tree is struct of array)
+#![forbid(unsafe_code)]
 
 use alloc::collections::BTreeMap;
-use alloc::{borrow::Cow, borrow::ToOwned, vec::Vec};
-use core::{fmt, format_args, option::Option, str};
+use alloc::{borrow::Cow, borrow::ToOwned, string::String, vec::Vec};
+use core::{fmt::Write, format_args, option::Option, str};
 
-use crate::{array::build_suffix_array::SuffixIndices, array::*, canonic_word, lcp::*};
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
-#[repr(transparent)]
-pub struct NodeIdx(usize);
-impl NodeIdx {
-    /// Return node index
-    ///```
-    /// use suff_collections::tree::*;
-    ///
-    /// let st = SuffixTree::new("word");
-    /// let root_node: &Node = st.node(NodeIdx::root());
-    /// assert_eq!(st.root_node(), root_node);
-    ///```
-    pub fn root() -> Self {
-        NodeIdx(0)
-    }
-    // allowed only in this module
-    pub(self) fn new(n: usize) -> Self {
-        NodeIdx(n)
-    }
-
-    /// Return number node index
-    ///```
-    /// use suff_collections::tree::*;
-    ///
-    /// let st = SuffixTree::new("word");
-    /// let root_idx: NodeIdx = NodeIdx::root();
-    /// assert_eq!(root_idx.unwrap(), 0);
-    ///```
-    pub fn unwrap(self) -> usize {
-        self.0
-    }
-}
+use crate::{array::build_suffix_array::SuffixIndices, array::*, lcp::*};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Node {
@@ -116,7 +80,7 @@ impl Node {
     ///
     /// let tree = SuffixTree::new("word");
     /// let children_num = tree.node(NodeIdx::root()).children().iter().count();
-    /// assert_eq!(children_num, "word\0".len());
+    /// assert_eq!(children_num, "word".len() + 1);
     ///```
     #[inline]
     pub fn children(&self) -> &BTreeMap<u8, NodeIdx> {
@@ -130,7 +94,7 @@ impl Node {
     /// let tree = SuffixTree::new("word");
     /// let node_idx = tree.try_to_node(NodeIdx::root(), 'r' as u8).unwrap();
     /// let node = tree.node(node_idx);
-    /// assert_eq!(node.len(), 3);
+    /// assert_eq!(node.len(), 2);
     ///```
     #[inline]
     pub fn len(&self) -> usize {
@@ -152,7 +116,7 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct State {
     node_idx: NodeIdx,
     edge_pos: usize,
@@ -161,7 +125,7 @@ struct State {
 #[derive(Debug, Clone)]
 pub struct SuffixTree<'t> {
     word: Cow<'t, str>,
-    v: Vec<Node>,
+    tree: AloneSuffixTree,
 }
 
 impl<'t> SuffixTree<'t> {
@@ -171,143 +135,34 @@ impl<'t> SuffixTree<'t> {
     ///
     /// let st: SuffixTree = SuffixTree::new("word");
     /// ```
-    /// At the end of the line should hit '\0'.
-    /// If there is no '\0' at the end then the line will be copied and added '\0' to the end.
-    /// Otherwise, the value will be taken by reference
     pub fn new(word: &'t str) -> Self {
         if word.is_empty() {
             return Self {
                 word: Cow::from(""),
-                v: vec![Node {
+                tree: AloneSuffixTree {
+                    nodes: vec![Node {
+                        link: Some(NodeIdx::root()),
+                        parent: NodeIdx::root(),
+                        children: BTreeMap::new(),
+                        len: 0,
+                        pos: 0,
+                    }],
+                },
+            };
+        }
+        let mut tree = Self {
+            word: Cow::from(word),
+            tree: AloneSuffixTree {
+                nodes: vec![Node {
                     link: Some(NodeIdx::root()),
                     parent: NodeIdx::root(),
                     children: BTreeMap::new(),
                     len: 0,
                     pos: 0,
                 }],
-            };
-        }
-        let new_word = canonic_word(word);
-        let mut tree = Self {
-            word: new_word,
-            v: vec![Node {
-                link: Some(NodeIdx::root()),
-                parent: NodeIdx::root(),
-                children: BTreeMap::new(),
-                len: 0,
-                pos: 0,
-            }],
+            },
         };
         tree.build_ukkonen();
-        tree.shrink_to_fit();
-        tree
-    }
-
-    /// Construct suffix tree from suffix array. Complexity O(n)
-    /// ```
-    /// use suff_collections::{array::*, tree::*};
-    ///
-    /// // let st = SuffixArray::<u8>::new("word\0");
-    /// // let st = SuffixArray::<u16>::new("word\0");
-    /// // let st = SuffixArray::<u32>::new("word\0");
-    /// let st = SuffixArray::<usize>::new("word\0");
-    /// let sa = SuffixTree::from(st);
-    /// ```
-    pub fn from<T: SuffixIndices<T>>(array: SuffixArray<T>) -> Self {
-        let lcp = array.lcp();
-        let (word, sa) = array.split_owned();
-        let mut tree = Self {
-            word: match word {
-                Cow::Borrowed(x) => Cow::from(x.to_owned()),
-                Cow::Owned(x) => Cow::from(x),
-            },
-            v: vec![Node {
-                link: Some(NodeIdx::root()),
-                parent: NodeIdx::root(),
-                children: BTreeMap::new(),
-                len: 0,
-                pos: 0,
-            }],
-        };
-
-        let tree_size = tree.max_tree_size();
-        tree.reserve(tree_size);
-        let mut total_len = vec![T::zero(); tree_size];
-        let mut node_idx = NodeIdx::root();
-        let word = tree.word.as_bytes().to_owned();
-
-        for (i, &start) in sa.iter().enumerate() {
-            // safe because sa is correct suffix array
-            let pref_len = unsafe { *lcp.idx(i) };
-
-            loop {
-                // safe because 0 <= node_idx < tree.len() && total_len.len() == tree.len()
-                if pref_len == unsafe { *total_len.get_unchecked(node_idx.unwrap()) }
-                    || tree.is_root(node_idx)
-                {
-                    let start = (start + pref_len).to_usize();
-                    let len = word.len() - start;
-                    let add_idx = tree.add_node(node_idx, len, start);
-
-                    // safe because 0 <= start < word.len() && pref is lcp
-                    let ch = unsafe { *word.get_unchecked(start) };
-                    tree.set_child(node_idx, add_idx, ch);
-
-                    // safe because 0 <= node_idx, add_idx < tree.len() && total_len.len() == tree.len()
-                    unsafe {
-                        *total_len.get_unchecked_mut(add_idx.unwrap()) = *total_len
-                            .get_unchecked(node_idx.unwrap())
-                            + T::try_from(len).ok().unwrap();
-                    }
-                    node_idx = add_idx;
-                    break;
-
-                // safe because 0 <= node_idx, parent_idx < tree.len() && total_len.len() == tree.len()
-                } else if unsafe {
-                    pref_len < *total_len.get_unchecked(node_idx.unwrap())
-                        && pref_len > *total_len.get_unchecked(tree.node(node_idx).parent.unwrap())
-                } {
-                    let start = (start + pref_len).to_usize();
-                    let len = word.len() - start;
-
-                    // safe because 0 <= node_idx < tree.len() && total_len.len() == tree.len()
-                    let suf_len = unsafe { *total_len.get_unchecked(node_idx.unwrap()) } - pref_len;
-                    let pref_len = tree.node(node_idx).len - suf_len.to_usize();
-                    let split_idx = tree.split(
-                        &word,
-                        node_idx,
-                        tree.node(node_idx).pos + pref_len,
-                        pref_len,
-                        suf_len.to_usize(),
-                    );
-
-                    // safe because 0 <= node_idx, split_idx < tree.len() && total_len.len() == tree.len()
-                    unsafe {
-                        *total_len.get_unchecked_mut(split_idx.unwrap()) =
-                            *total_len.get_unchecked(node_idx.unwrap()) - suf_len;
-                    }
-                    let add_idx = tree.add_node(split_idx, len, start);
-
-                    // safe because 0 <= start < word.len() && pref is lcp
-                    let ch = unsafe { *word.get_unchecked(start) };
-                    tree.set_child(split_idx, add_idx, ch);
-
-                    // safe because 0 <= node_idx, split_idx < tree.len() && total_len.len() == tree.len()
-                    unsafe {
-                        *total_len.get_unchecked_mut(add_idx.unwrap()) = *total_len
-                            .get_unchecked(split_idx.unwrap())
-                            + T::try_from(len).ok().unwrap();
-                    }
-                    node_idx = add_idx;
-                    break;
-                } else {
-                    node_idx = tree.node(node_idx).parent;
-                }
-            }
-        }
-
-        tree.shrink_to_fit();
-        // correct because tree is correct suffix tree && array.word().last() == '\0'
         tree
     }
 
@@ -320,19 +175,7 @@ impl<'t> SuffixTree<'t> {
     /// assert_eq!(find, Some(1));
     /// ```
     pub fn find(&self, find: &str) -> Option<usize> {
-        let (word, find) = (self.word.as_bytes(), find.as_bytes());
-        let mut node_idx = NodeIdx::root();
-        let mut curr_pos = 0;
-        loop {
-            let (end_edge_pos, edge_pos) =
-                self.edge_propagate(&mut node_idx, &mut curr_pos, word, find)?;
-            if curr_pos == find.len() {
-                return Some(edge_pos - find.len());
-            }
-            if edge_pos != end_edge_pos {
-                return None;
-            }
-        }
+        self.tree.find(&self.word, find, false)
     }
 
     /// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1]\) && lcp.len() == sa.len()
@@ -340,15 +183,14 @@ impl<'t> SuffixTree<'t> {
     /// ```
     /// use suff_collections::tree::*;
     ///
-    /// // let lcp = SuffixTree::new("word").lcp_stack::<u8>();
-    /// // let lcp = SuffixTree::new("word").lcp_stack::<u16>();
-    /// // let lcp = SuffixTree::new("word").lcp_stack::<u32>();
-    /// let lcp = SuffixTree::new("word").lcp_stack::<usize>();
+    /// // let lcp = SuffixTree::new("word").lcp::<u8>();
+    /// // let lcp = SuffixTree::new("word").lcp::<u16>();
+    /// // let lcp = SuffixTree::new("word").lcp::<u32>();
+    /// let lcp = SuffixTree::new("word").lcp::<usize>();
     /// ```
-    pub fn lcp_stack<T: SuffixIndices<T>>(&self) -> LCP<T> {
-        let mut lcp = Vec::<T>::with_capacity(self.word.len());
-        lcp.push(T::zero());
-        let mut stack = Vec::with_capacity(self.word.len());
+    pub fn lcp<T: SuffixIndices<T>>(&self) -> LCP<T> {
+        let mut lcp = Vec::<T>::with_capacity(self.word.len() + 1);
+        let mut stack = Vec::with_capacity(self.word.len() + 1);
         let mut prev_len = 0;
 
         stack.push(LCPChildrenIterator {
@@ -356,7 +198,6 @@ impl<'t> SuffixTree<'t> {
             len: 0,
             node_len: 0,
         });
-        stack.last_mut().unwrap().it.next();
         while let Some(x) = stack.last_mut() {
             match x.it.next() {
                 None => {
@@ -379,7 +220,6 @@ impl<'t> SuffixTree<'t> {
                 }
             }
         }
-        lcp.shrink_to_fit();
         return LCP::new(lcp);
 
         struct LCPChildrenIterator<I>
@@ -392,52 +232,34 @@ impl<'t> SuffixTree<'t> {
         }
     }
 
-    /// lcp\[i\] = max_pref(sa\[i\], sa\[i - 1\]) && lcp.len() == sa.len()
-    /// Construct LCP recursive. Complexity O(n)
-    /// ```
-    /// use suff_collections::tree::*;
-    ///
-    /// // let lcp = SuffixTree::new("word").lcp_rec::<u8>();
-    /// // let lcp = SuffixTree::new("word").lcp_rec::<u16>();
-    /// // let lcp = SuffixTree::new("word").lcp_rec::<u32>();
-    /// let lcp = SuffixTree::new("word").lcp_rec::<usize>();
-    /// ```
-    pub fn lcp_rec<T: SuffixIndices<T>>(&self) -> LCP<T> {
-        let node = self.node(NodeIdx::root());
-        if node.children.is_empty() {
-            return LCP::new(vec![]);
-        }
-        let mut lcp = Vec::<T>::with_capacity(self.word.len());
-        lcp.push(T::zero());
-        let mut prev_len = 0;
-        for (_, &child) in node.children.iter().skip(1) {
-            self.lcp_rec_inner(child, node.len, &mut prev_len, &mut lcp);
-        }
-        lcp.shrink_to_fit();
-        LCP::new(lcp)
-    }
-
     /// if word is ascii then print data in .dot format for graphviz
     /// ```
     /// use suff_collections::tree::*;
     ///
-    /// let mut buff = String::new();
-    /// SuffixTree::new("word").to_graphviz(&mut buff).unwrap();
+    /// let buff = SuffixTree::new("word").to_graphviz();
     /// println!("{}", buff);
     /// ```
-    pub fn to_graphviz(&self, f: &mut impl fmt::Write) -> fmt::Result {
+    pub fn to_graphviz(&self) -> String {
         assert!(self.word.is_ascii());
-        let size = (self.v.len() as f64 * 0.5) as u64;
-        f.write_str("digraph G {\n")?;
-        f.write_fmt(format_args!("    size=\"{}, {}\"\n", size, size))?;
-        for (i, x) in self.v.iter().enumerate() {
+
+        let mut f = String::new();
+        let size = (self.tree.nodes.len() as f64 * 0.5) as u64;
+        f.write_str("digraph G {\n").unwrap();
+        f.write_fmt(format_args!("    size=\"{}, {}\"\n", size, size))
+            .unwrap();
+        for (i, x) in self.tree.nodes.iter().enumerate() {
             let node_name = &self.word[x.pos..x.pos + x.len];
             let child = &x.children;
             for &node_idx in child.values() {
                 let start = self.node(node_idx).pos;
                 let end = start + self.node(node_idx).len;
-                let label_name = self.word.as_bytes()[start] as char;
-                let children_name = &self.word[start..end];
+
+                let (label_name, children_name) = if start != end {
+                    (self.word.as_bytes()[start] as char, &self.word[start..end])
+                } else {
+                    (0 as char, "\0")
+                };
+
                 f.write_fmt(format_args!(
                     "    _{}_{} -> _{}_{} [byte_label=\"_{}_{}\\npos: {}, len: {}\"]\n",
                     i,
@@ -448,7 +270,8 @@ impl<'t> SuffixTree<'t> {
                     label_name,
                     start,
                     end - start
-                ))?;
+                ))
+                .unwrap();
             }
             if let Some(link_idx) = x.link {
                 let start = self.node(link_idx).pos;
@@ -460,11 +283,12 @@ impl<'t> SuffixTree<'t> {
                     node_name,
                     link_idx.unwrap(),
                     link_name
-                ))?;
+                ))
+                .unwrap();
             }
         }
-        f.write_str("}")?;
-        Ok(())
+        f.write_str("}").unwrap();
+        f
     }
 
     /// Semantic to check if the node is root
@@ -477,7 +301,7 @@ impl<'t> SuffixTree<'t> {
     /// ```
     #[inline]
     pub fn is_root(&self, node_idx: NodeIdx) -> bool {
-        node_idx == NodeIdx::root()
+        self.tree.is_root(node_idx)
     }
 
     /// Return ref on word
@@ -486,7 +310,7 @@ impl<'t> SuffixTree<'t> {
     ///
     /// let st = SuffixTree::new("word");
     /// let word: &str = st.word();
-    /// assert_eq!(word, "word\0");
+    /// assert_eq!(word, "word");
     /// ```
     #[inline]
     pub fn word(&self) -> &str {
@@ -502,15 +326,7 @@ impl<'t> SuffixTree<'t> {
     /// ```
     #[inline]
     pub fn node(&self, node_idx: NodeIdx) -> &Node {
-        // safe because 0 <= node_idx < self.v.len():
-        //      node_idx is something by the type of a pointer to memory
-        //      that cannot be NULL (None) and to everything is in
-        //      the range (0..self.v().len()] because the generation
-        //      of new values in the NodeIdx type is provided only by the
-        //      NodeIdx::new(n) method, but this method can be used only in this module
-        //      and the NodeIdx::new(n) method is called only when adding a new Node.
-        //      The tree always contains the root node
-        unsafe { self.v.get_unchecked(node_idx.unwrap()) }
+        self.tree.node(node_idx)
     }
 
     /// Return ref on root node in suffix tree
@@ -523,8 +339,7 @@ impl<'t> SuffixTree<'t> {
     /// ```
     #[inline]
     pub fn root_node(&self) -> &Node {
-        // safe because suffix tree always have self.v.len() >= 1
-        unsafe { self.v.get_unchecked(0) }
+        &self.tree.nodes[0]
     }
 
     /// Go to the next node.
@@ -558,22 +373,24 @@ impl<'t> SuffixTree<'t> {
     /// ```
     #[inline]
     pub fn try_to_node(&self, current_node: NodeIdx, transition: u8) -> Option<NodeIdx> {
-        match self.node(current_node).children.get(&transition) {
-            Some(&x) => Some(x),
-            None => None,
-        }
+        self.tree.try_to_node(current_node, transition)
     }
 
-    // leaf size == word.len()
-    // inner node <= word.len() because we do word.len() operation (insert and add node) or add node
-    // |tree| == leaf size + inner node <= 2 * |word|
+    // |word| + 1 == |leaf| leaf is word suffix + terminal leaf
+    // |inner node| <= |word| + 1 because we do |word|
+    //  operation (insert and add node) or add node + root node
+    // |tree| == |leaf| + |inner node| <= 2 * |leaf| <= 2 * (|word| + 1)
     #[inline]
     fn max_tree_size(&self) -> usize {
-        2 * self.word.len()
+        2 * (self.word.len() + 1)
+    }
+    #[inline]
+    fn reserve(&mut self, size: usize) {
+        self.tree.nodes.reserve(size);
     }
     #[inline]
     fn shrink_to_fit(&mut self) {
-        self.v.shrink_to_fit();
+        self.tree.nodes.shrink_to_fit();
     }
     #[inline]
     fn build_ukkonen(&mut self) {
@@ -582,34 +399,305 @@ impl<'t> SuffixTree<'t> {
             node_idx: NodeIdx::root(),
             edge_pos: 0,
         };
-        let word = self.word.as_bytes().to_owned();
-        for (i, &ch) in word.iter().enumerate() {
+        for (i, &ch) in self.word.as_bytes().iter().enumerate() {
             while self
-                .try_transfer_to(&mut s, ch)
-                .if_not_transfer(|x| x.create_transfer(&word, i).to_link(&word))
+                .tree
+                .try_transfer_to(&self.word, &mut s, ch, false)
+                .if_transfer_not_success(|x| x.create_transfer(i).to_link())
             {}
+        }
+
+        // Add terminal node. Position `i` is safe because
+        // we dont do access like self.word.as_bytes()[i] in
+        // create_transfer or try_transfer_to and use `i` like length
+
+        let i = self.word.len();
+        let ch = 0;
+        while self
+            .tree
+            .try_transfer_to(&self.word, &mut s, ch, false)
+            .if_transfer_not_success(|x| x.create_transfer(i).to_link())
+        {}
+
+        self.shrink_to_fit();
+    }
+}
+
+impl<T: SuffixIndices<T>> From<SuffixArray<'_, T>> for SuffixTree<'_> {
+    /// Construct suffix tree from suffix array. Complexity O(n)
+    /// ```
+    /// use suff_collections::{array::*, tree::*};
+    ///
+    /// // let st = SuffixArray::<u8>::new("word");
+    /// // let st = SuffixArray::<u16>::new("word");
+    /// // let st = SuffixArray::<u32>::new("word");
+    /// let st = SuffixArray::<usize>::new("word");
+    /// let sa = SuffixTree::from(st);
+    /// ```
+    fn from(array: SuffixArray<T>) -> Self {
+        let lcp = array.lcp();
+        let (word, sa) = array.split_owned();
+        let mut suff_tree = Self {
+            word: match word {
+                Cow::Borrowed(x) => Cow::from(x.to_owned()),
+                Cow::Owned(x) => Cow::from(x),
+            },
+            tree: AloneSuffixTree {
+                nodes: vec![Node {
+                    link: Some(NodeIdx::root()),
+                    parent: NodeIdx::root(),
+                    children: BTreeMap::new(),
+                    len: 0,
+                    pos: 0,
+                }],
+            },
+        };
+
+        let tree_size = suff_tree.max_tree_size();
+        suff_tree.reserve(tree_size);
+        let mut total_len = vec![T::zero(); tree_size];
+        let mut node_idx = NodeIdx::root();
+
+        for (&start, &pref_len) in sa.iter().zip(lcp.iter()) {
+            loop {
+                if pref_len == total_len[node_idx.unwrap()] || suff_tree.is_root(node_idx) {
+                    let start = (start + pref_len).to_usize();
+                    let len = suff_tree.word.as_bytes().len() - start;
+                    let add_idx = suff_tree.tree.add_node(node_idx, len, start);
+
+                    let ch = suff_tree.word.as_bytes()[start];
+                    suff_tree.tree.set_child(node_idx, add_idx, ch);
+
+                    total_len[add_idx.unwrap()] =
+                        total_len[node_idx.unwrap()] + T::try_from(len).ok().unwrap();
+                    node_idx = add_idx;
+                    break;
+                } else if pref_len < total_len[node_idx.unwrap()]
+                    && pref_len > total_len[suff_tree.node(node_idx).parent.unwrap()] {
+
+                    let start = (start + pref_len).to_usize();
+                    let len = suff_tree.word.as_bytes().len() - start;
+
+                    let suf_len = total_len[node_idx.unwrap()] - pref_len;
+                    let pref_len = suff_tree.node(node_idx).len - suf_len.to_usize();
+                    let split_idx = suff_tree.tree.split(
+                        &suff_tree.word,
+                        node_idx,
+                        suff_tree.node(node_idx).pos + pref_len,
+                        pref_len,
+                        suf_len.to_usize(),
+                    );
+
+                    total_len[split_idx.unwrap()] = total_len[node_idx.unwrap()] - suf_len;
+                    let add_idx = suff_tree.tree.add_node(split_idx, len, start);
+
+                    let ch = suff_tree.word.as_bytes()[start];
+                    suff_tree.tree.set_child(split_idx, add_idx, ch);
+
+                    total_len[add_idx.unwrap()] =
+                        total_len[split_idx.unwrap()] + T::try_from(len).ok().unwrap();
+                    node_idx = add_idx;
+                    break;
+                } else {
+                    node_idx = suff_tree.node(node_idx).parent;
+                }
+            }
+        }
+
+        suff_tree.shrink_to_fit();
+        suff_tree
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OnlineSuffixTree {
+    word: String,
+    tree: AloneSuffixTree,
+    build_info: State,
+}
+
+impl OnlineSuffixTree {
+    /// Create online suffix tree
+    /// ```
+    /// use suff_collections::tree::*;
+    ///
+    /// let ost: OnlineSuffixTree = OnlineSuffixTree::new();
+    /// ```
+    pub fn new() -> Self {
+        Self {
+            word: String::new(),
+            tree: AloneSuffixTree {
+                nodes: vec![Node {
+                    link: Some(NodeIdx::root()),
+                    parent: NodeIdx::root(),
+                    children: BTreeMap::new(),
+                    len: 0,
+                    pos: 0,
+                }],
+            },
+            build_info: State {
+                node_idx: NodeIdx::root(),
+                edge_pos: 0,
+            },
         }
     }
 
+    /// Add word to suffix tree
+    /// ```
+    /// use suff_collections::tree::*;
+    ///
+    /// let mut ost: OnlineSuffixTree = OnlineSuffixTree::new();
+    /// ost.add("wo");
+    /// ost.add("r");
+    /// ost.add("d");
+    /// ```
+    pub fn add(&mut self, add_word: &str) {
+        let mut i = self.word.len();
+        self.word.push_str(add_word);
+        let mut s = self.build_info.clone();
+
+        for &ch in add_word.as_bytes().iter() {
+            while self
+                .tree
+                .try_transfer_to(&self.word, &mut s, ch, true)
+                .if_transfer_not_success(|x| x.create_transfer(i).to_link())
+            {}
+            i += 1;
+        }
+
+        self.build_info = s;
+    }
+
+    /// Transform online suffix tree to suffix tree
+    /// ```
+    /// use suff_collections::tree::*;
+    ///
+    /// let mut ost: OnlineSuffixTree = OnlineSuffixTree::new();
+    /// ost.add("wo");
+    /// ost.add("r");
+    /// ost.add("d");
+    ///
+    /// let suffix_tree = ost.finish();
+    /// ```
+    pub fn finish<'t>(mut self) -> SuffixTree<'t> {
+        let mut s = self.build_info.clone();
+        let i = self.word.len();
+        let ch = 0;
+        while self
+            .tree
+            .try_transfer_to(&self.word, &mut s, ch, true)
+            .if_transfer_not_success(|x| x.create_transfer(i).to_link())
+        {}
+
+        self.word.shrink_to_fit();
+        self.tree.nodes.shrink_to_fit();
+
+        self.tree
+            .nodes
+            .iter_mut()
+            .filter(|x| x.len == usize::MAX)
+            .for_each(|x| x.len = i - x.pos);
+
+        SuffixTree {
+            word: Cow::from(self.word),
+            tree: self.tree,
+        }
+    }
+
+    /// Find substr. Complexity O(|word|)
+    /// ```
+    /// use suff_collections::tree::*;
+    ///
+    /// let mut st = OnlineSuffixTree::new();
+    /// st.add("word");
+    /// let find: Option<usize> = st.find("or");
+    /// assert_eq!(find, Some(1));
+    /// ```
+    pub fn find(&self, find: &str) -> Option<usize> {
+        self.tree.find(&self.word, find, true)
+    }
+}
+
+impl Default for OnlineSuffixTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(transparent)]
+pub struct NodeIdx(usize);
+impl NodeIdx {
+    /// Return node index
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let st = SuffixTree::new("word");
+    /// let root_node: &Node = st.node(NodeIdx::root());
+    /// assert_eq!(st.root_node(), root_node);
+    ///```
+    pub fn root() -> Self {
+        NodeIdx(0)
+    }
+    // allowed only in this module
+    pub(crate) fn new(n: usize) -> Self {
+        NodeIdx(n)
+    }
+
+    /// Return number node index
+    ///```
+    /// use suff_collections::tree::*;
+    ///
+    /// let st = SuffixTree::new("word");
+    /// let root_idx: NodeIdx = NodeIdx::root();
+    /// assert_eq!(root_idx.unwrap(), 0);
+    ///```
+    pub fn unwrap(self) -> usize {
+        self.0
+    }
+}
+
+#[derive(Debug, Clone)]
+#[repr(transparent)]
+struct AloneSuffixTree {
+    nodes: Vec<Node>,
+}
+
+impl AloneSuffixTree {
     #[inline]
-    fn try_transfer_to<'r, 's>(&'r mut self, s: &'s mut State, ch: u8) -> Transfer<'r, 't, 's> {
-        if self.is_end_edge(&s) {
-            if self.node(s.node_idx).children.contains_key(&ch) {
-                s.node_idx = self.to_node(s.node_idx, ch);
-                s.edge_pos = self.node(s.node_idx).pos + 1;
-                return Transfer::Succes;
-            } else {
-                return Transfer::StopInNode(self, s, ch);
-            }
+    fn node(&self, node_idx: NodeIdx) -> &Node {
+        &self.nodes[node_idx.unwrap()]
+    }
+    #[inline]
+    fn node_mut(&mut self, node_idx: NodeIdx) -> &mut Node {
+        &mut self.nodes[node_idx.unwrap()]
+    }
+    #[inline]
+    fn try_to_node(&self, current_node: NodeIdx, transition: u8) -> Option<NodeIdx> {
+        match self.node(current_node).children.get(&transition) {
+            Some(&x) => Some(x),
+            None => None,
         }
-        // safe because s.edge_pos < self.word.len()
-        // if s.edge_pos >= self.word.len() then algorithm is done
-        if unsafe { *self.word.as_bytes().get_unchecked(s.edge_pos) } == ch {
-            s.edge_pos += 1;
-            Transfer::Succes
-        } else {
-            Transfer::StopInEdge(self, s, ch)
-        }
+    }
+    #[inline]
+    fn to_node(&self, current_node: NodeIdx, transition: u8) -> NodeIdx {
+        self.try_to_node(current_node, transition).unwrap()
+    }
+    #[inline]
+    fn is_root(&self, node_idx: NodeIdx) -> bool {
+        node_idx == NodeIdx::root()
+    }
+    #[inline]
+    fn is_end_edge(&self, s: &State) -> bool {
+        let node = self.node(s.node_idx);
+        s.edge_pos == node.pos + node.len
+    }
+    #[inline]
+    fn update_edge(&mut self, node_idx: NodeIdx, parent: NodeIdx, len: usize, pos: usize) {
+        let node = self.node_mut(node_idx);
+        node.parent = parent;
+        node.len = len;
+        node.pos = pos;
     }
     #[inline]
     fn update_link(&mut self, s: &mut State, link: NodeIdx) {
@@ -618,10 +706,27 @@ impl<'t> SuffixTree<'t> {
         s.node_idx = link;
         s.edge_pos = node.pos + node.len;
     }
+
+    #[inline]
+    fn set_child(&mut self, node_idx: NodeIdx, child_idx: NodeIdx, ch: u8) {
+        self.node_mut(node_idx).children.insert(ch, child_idx);
+    }
+    #[inline]
+    fn add_node(&mut self, parent: NodeIdx, len: usize, pos: usize) -> NodeIdx {
+        let add_node_idx = NodeIdx::new(self.nodes.len());
+        self.nodes.push(Node {
+            link: None,
+            parent: parent,
+            children: BTreeMap::new(),
+            len: len,
+            pos: pos,
+        });
+        add_node_idx
+    }
     #[inline]
     fn split(
         &mut self,
-        word: &[u8],
+        word: &str,
         node_idx: NodeIdx,
         split_word_pos: usize,
         pref_len: usize,
@@ -632,20 +737,12 @@ impl<'t> SuffixTree<'t> {
             pref_len,
             self.node(node_idx).pos,
         );
-        self.set_child(
-            insert_node,
-            node_idx,
-            // safe because split_word_pos < self.word.len()
-            // if split_word_pos >= self.word.len() then never call insert because processing self.word is done
-            unsafe { *word.get_unchecked(split_word_pos) },
-        );
+        self.set_child(insert_node, node_idx, word.as_bytes()[split_word_pos]);
 
         self.set_child(
             self.node(node_idx).parent,
             insert_node,
-            // safe because self.node(node_idx).pos < self.word.len()
-            // if self.node(node_idx).pos >= self.word.len() never hepens because in tree all self.node.pos < self.word.len()
-            unsafe { *word.get_unchecked(self.node(node_idx).pos) },
+            word.as_bytes()[self.node(node_idx).pos],
         );
 
         self.update_edge(node_idx, insert_node, suf_len, split_word_pos);
@@ -654,15 +751,13 @@ impl<'t> SuffixTree<'t> {
     #[inline]
     fn skip_walk(
         &self,
-        word: &[u8],
+        word: &str,
         link: &mut NodeIdx,
         word_pos: &mut usize,
         edge_len: &mut usize,
     ) {
         loop {
-            // safe because word_pos < self.word.len().
-            // if self.node(s.node_idx).pos >= self.word.len() never hepens because in tree all self.node.pos < self.word.len()
-            let key = unsafe { *word.get_unchecked(*word_pos) };
+            let key = word.as_bytes()[*word_pos];
             *link = self.to_node(*link, key);
             let node = self.node(*link);
             if *edge_len > node.len {
@@ -675,134 +770,120 @@ impl<'t> SuffixTree<'t> {
     }
 
     #[inline]
-    fn reserve(&mut self, size: usize) {
-        self.v.reserve(size);
-    }
-    #[inline]
-    fn is_end_edge(&self, s: &State) -> bool {
-        let node = self.node(s.node_idx);
-        s.edge_pos == node.pos + node.len
-    }
-    #[inline]
-    fn generate_node_idx(&self) -> NodeIdx {
-        NodeIdx::new(self.v.len())
-    }
-    #[inline]
-    fn node_mut(&mut self, node_idx: NodeIdx) -> &mut Node {
-        unsafe { self.v.get_unchecked_mut(node_idx.unwrap()) }
-    }
-
-    #[inline]
-    fn to_node(&self, current_node: NodeIdx, transition: u8) -> NodeIdx {
-        *self.node(current_node).children.get(&transition).unwrap()
-    }
-    #[inline]
-    fn set_child(&mut self, node_idx: NodeIdx, child_idx: NodeIdx, ch: u8) {
-        self.node_mut(node_idx).children.insert(ch, child_idx);
-    }
-    #[inline]
-    fn add_node(&mut self, parent: NodeIdx, len: usize, pos: usize) -> NodeIdx {
-        let add_node_idx = self.generate_node_idx();
-        self.v.push(Node {
-            link: None,
-            parent: parent,
-            children: BTreeMap::new(),
-            len: len,
-            pos: pos,
-        });
-        add_node_idx
-    }
-    #[inline]
-    fn update_edge(&mut self, node_idx: NodeIdx, parent: NodeIdx, len: usize, pos: usize) {
-        let node = self.node_mut(node_idx);
-        node.parent = parent;
-        node.len = len;
-        node.pos = pos;
-    }
-    #[inline]
-    fn lcp_rec_inner<T: SuffixIndices<T>>(
-        &self,
-        node_idx: NodeIdx,
-        len: usize,
-        prev_len: &mut usize,
-        lcp: &mut Vec<T>,
-    ) {
-        let node = self.node(node_idx);
-        if node.children.is_empty() {
-            lcp.push(T::try_from(*prev_len).ok().unwrap());
-            *prev_len = len;
-            return;
-        }
-        for &child in node.children.values() {
-            self.lcp_rec_inner(child, len + node.len, prev_len, lcp);
-        }
-        *prev_len -= node.len;
-    }
-    #[inline]
-    fn edge_propagate(
-        &self,
-        node_idx: &mut NodeIdx,
-        curr_pos: &mut usize,
-        word: &[u8],
-        find: &[u8],
-    ) -> Option<(usize, usize)> {
-        // safe because curr_pos < self.word.len() && node_idx < self.v.len()
-        // if self.node(s.node_idx).pos >= self.word.len() never hepens because in tree all self.node.pos < self.word.len()
-        *node_idx = unsafe { self.try_to_node(*node_idx, *find.get_unchecked(*curr_pos))? };
-        let node = self.node(*node_idx);
-        let mut edge_pos = node.pos;
-        let end_edge_pos = node.pos + node.len;
-        while edge_pos < end_edge_pos && *curr_pos < find.len()
-        // safe by previous check
-            && unsafe { *find.get_unchecked(*curr_pos) == *word.get_unchecked(edge_pos) }
+    fn try_transfer_to<'r, 's, 't>(
+        &'r mut self,
+        word: &'t str,
+        s: &'s mut State,
+        ch: u8,
+        is_online: bool,
+    ) -> Transfer<'r, 's, 't> {
+        if (is_online && self.node(s.node_idx).len() != usize::MAX && self.is_end_edge(&s))
+            || (!is_online && self.is_end_edge(&s))
         {
-            edge_pos += 1;
-            *curr_pos += 1;
+            if self.node(s.node_idx).children.contains_key(&ch) {
+                s.node_idx = self.to_node(s.node_idx, ch);
+                s.edge_pos = self.node(s.node_idx).pos + 1;
+                return Transfer::Success;
+            } else {
+                return Transfer::StopInNode(self, word, s, ch, is_online);
+            }
         }
-        Some((end_edge_pos, edge_pos))
+        if word.as_bytes()[s.edge_pos] == ch {
+            s.edge_pos += 1;
+            Transfer::Success
+        } else {
+            Transfer::StopInEdge(self, word, s, ch, is_online)
+        }
+    }
+
+    #[inline]
+    fn find(&self, word: &str, find: &str, is_online: bool) -> Option<usize> {
+        let (word, mut find) = (word.as_bytes(), find.as_bytes());
+        let find_len = find.len();
+        let mut node_idx = NodeIdx::root();
+        loop {
+            let node = self.node(node_idx);
+            let mut edge_pos = node.pos;
+            let end_edge_pos = if is_online && node.len == usize::MAX {
+                word.len()
+            } else {
+                node.pos + node.len
+            };
+            while edge_pos < end_edge_pos && !find.is_empty() && word[edge_pos] == find[0] {
+                edge_pos += 1;
+                find = &find[1..];
+            }
+
+            if find.is_empty() {
+                return Some(edge_pos - find_len);
+            }
+            if edge_pos != end_edge_pos {
+                return None;
+            }
+            node_idx = self.try_to_node(node_idx, find[0])?;
+        }
     }
 }
 
-enum Transfer<'r, 't, 's> {
-    StopInEdge(&'r mut SuffixTree<'t>, &'s mut State, u8),
-    StopInNode(&'r mut SuffixTree<'t>, &'s mut State, u8),
-    Succes,
+enum Transfer<'r, 's, 't> {
+    StopInEdge(&'r mut AloneSuffixTree, &'t str, &'s mut State, u8, bool),
+    StopInNode(&'r mut AloneSuffixTree, &'t str, &'s mut State, u8, bool),
+    Success,
 }
 
-impl<'r, 't, 's> Transfer<'r, 't, 's> {
+impl<'r, 's, 't> Transfer<'r, 's, 't> {
     #[inline]
-    fn if_not_transfer<F>(self, f: F) -> bool
+    fn if_transfer_not_success<F>(self, f: F) -> bool
     where
         F: Fn(Transfer) -> bool,
     {
         match self {
-            Transfer::Succes => false,
-            Transfer::StopInEdge(_, _, _) | Transfer::StopInNode(_, _, _) => f(self),
+            Transfer::Success => false,
+            Transfer::StopInEdge(..) | Transfer::StopInNode(..) => f(self),
         }
     }
     #[inline]
-    fn create_transfer(self, word: &[u8], ch_pos: usize) -> Transfer<'r, 't, 's> {
+    fn create_transfer(self, ch_pos: usize) -> Self {
         match self {
-            Transfer::StopInEdge(tree, s, ch) => {
-                let suf_len = tree.node(s.node_idx).pos + tree.node(s.node_idx).len - s.edge_pos;
-                let pref_len = tree.node(s.node_idx).len - suf_len;
+            Transfer::StopInEdge(tree, word, s, ch, is_online) => {
+                let suf_len = if is_online && tree.node(s.node_idx).len == usize::MAX {
+                    usize::MAX
+                } else {
+                    tree.node(s.node_idx).pos + tree.node(s.node_idx).len - s.edge_pos
+                };
+                let pref_len = if is_online {
+                    s.edge_pos - tree.node(s.node_idx).pos
+                } else {
+                    tree.node(s.node_idx).len - suf_len
+                };
                 s.node_idx = tree.split(word, s.node_idx, s.edge_pos, pref_len, suf_len);
-                let add_node = tree.add_node(s.node_idx, tree.word.len() - ch_pos, ch_pos);
+
+                let current_suf_len = if is_online {
+                    usize::MAX
+                } else {
+                    word.len() - ch_pos
+                };
+                let add_node = tree.add_node(s.node_idx, current_suf_len, ch_pos);
                 tree.set_child(s.node_idx, add_node, ch);
-                Transfer::StopInNode(tree, s, ch)
+                Transfer::StopInNode(tree, word, s, ch, is_online)
             }
-            Transfer::StopInNode(tree, s, ch) => {
-                let add_node = tree.add_node(s.node_idx, tree.word.len() - ch_pos, ch_pos);
+            Transfer::StopInNode(tree, word, s, ch, is_online) => {
+                let current_suf_len = if is_online {
+                    usize::MAX
+                } else {
+                    word.len() - ch_pos
+                };
+                let add_node = tree.add_node(s.node_idx, current_suf_len, ch_pos);
                 tree.set_child(s.node_idx, add_node, ch);
-                Transfer::StopInNode(tree, s, ch)
+                Transfer::StopInNode(tree, word, s, ch, is_online)
             }
-            Transfer::Succes => unreachable!(),
+            Transfer::Success => unreachable!(),
         }
     }
     #[inline]
-    fn to_link(self, word: &[u8]) -> bool {
+    fn to_link(self) -> bool {
         match self {
-            Transfer::StopInNode(tree, s, _) => {
+            Transfer::StopInNode(tree, word, s, _, is_online) => {
                 if tree.is_root(s.node_idx) {
                     return false;
                 }
@@ -833,24 +914,19 @@ impl<'r, 't, 's> Transfer<'r, 't, 's> {
                             tree.update_link(s, link);
                         } else {
                             word_pos += edge_len;
-                            let s_link = State {
-                                node_idx: link,
-                                edge_pos: word_pos,
+                            let suf_len = if is_online && tree.node(link).len == usize::MAX {
+                                usize::MAX
+                            } else {
+                                tree.node(link).len - edge_len
                             };
-                            let insert_node = tree.split(
-                                word,
-                                s_link.node_idx,
-                                s_link.edge_pos,
-                                edge_len,
-                                tree.node(link).len - edge_len,
-                            );
+                            let insert_node = tree.split(word, link, word_pos, edge_len, suf_len);
                             tree.update_link(s, insert_node);
                         }
                     }
                 };
                 true
             }
-            Transfer::StopInEdge(_, _, _) | Transfer::Succes => unreachable!(),
+            Transfer::StopInEdge(..) | Transfer::Success => unreachable!(),
         }
     }
 }

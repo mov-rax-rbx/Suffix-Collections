@@ -78,28 +78,28 @@ fn trust_lcp(line: &str) -> Vec<usize> {
 
 #[test]
 fn ukkonen_test_find_1() {
-    let line = "ocaocacao\0";
+    let line = "ocaocacao";
     let find = "aca";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
 }
 #[test]
 fn ukkonen_test_find_2() {
-    let line = "aocacocaoabacaca\0";
+    let line = "aocacocaoabacaca";
     let find = "aoabacac";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
 }
 #[test]
 fn ukkonen_test_find_utf8_1() {
-    let line = "色は匂へど 散りぬるを\0";
+    let line = "色は匂へど 散りぬるを";
     let find = "ど 散りぬ";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
 }
 #[test]
 fn ukkonen_test_find_utf8_2() {
-    let line = "色は匂へど 散りぬるを\0";
+    let line = "色は匂へど 散りぬるを";
     let find = "ã© æ£ãã¬";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
@@ -108,7 +108,7 @@ fn ukkonen_test_find_utf8_2() {
 fn ukkonen_test_find_utf8_3() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = "МНОПРСТУФХЦЧШЩЪЫ";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
@@ -117,7 +117,7 @@ fn ukkonen_test_find_utf8_3() {
 fn ukkonen_test_find_utf8_4() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line
         .as_bytes()
         .iter()
@@ -130,14 +130,14 @@ fn ukkonen_test_find_utf8_4() {
 fn ukkonen_test_find_utf8_5() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line.escape_unicode().collect::<String>();
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
 }
 #[test]
 fn suffix_array_test_find_utf8_1() {
-    let line = "色は匂へど 散りぬるを\0";
+    let line = "色は匂へど 散りぬるを";
     let find = "ど 散りぬ";
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.find(find);
@@ -145,7 +145,7 @@ fn suffix_array_test_find_utf8_1() {
 }
 #[test]
 fn suffix_array_test_find_utf8_2() {
-    let line = "色は匂へど 散りぬるを\0";
+    let line = "色は匂へど 散りぬるを";
     let find = "ã© æ£ãã¬";
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.find(find);
@@ -155,7 +155,7 @@ fn suffix_array_test_find_utf8_2() {
 fn suffix_array_test_find_utf8_3() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = "МНОПРСТУФХЦЧШЩЪЫ";
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.find(find);
@@ -165,7 +165,7 @@ fn suffix_array_test_find_utf8_3() {
 fn suffix_array_test_find_utf8_4() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line
         .as_bytes()
         .iter()
@@ -179,7 +179,7 @@ fn suffix_array_test_find_utf8_4() {
 fn suffix_array_test_find_utf8_5() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line.escape_unicode().collect::<String>();
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.find(find);
@@ -189,7 +189,7 @@ fn suffix_array_test_find_utf8_5() {
 fn suffix_array_test_find_utf8_6() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line.escape_unicode().collect::<String>();
     let sa = SuffixArray::<u32>::new(line);
     let res = sa.find(find);
@@ -202,7 +202,7 @@ fn suffix_array_test_find_utf8_6() {
 fn suffix_array_test_find_utf8_7() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let find = &line.escape_unicode().collect::<String>();
     let sa = SuffixArray::<u16>::new(line);
     let res = sa.find(find);
@@ -217,7 +217,7 @@ fn ukkonen_test_big_find() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "cacaoca____";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
@@ -246,49 +246,35 @@ aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaoca";
 }
 #[test]
 fn ukkonen_test_find_3() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
     let find = "cacuyuysuuoca";
     let res = SuffixTree::new(line).find(find);
     assert_eq!(res, trust_find(line, find));
 }
 
 #[test]
-fn test_to_suffix_array_rec_1() {
+fn test_to_suffix_array_1() {
     let line =
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
-    let res = SuffixArray::<usize>::from_rec(SuffixTree::new(line))
+    let res = SuffixArray::<usize>::from(SuffixTree::new(line))
         .suffix_array()
         .clone();
     assert_eq!(res, trust_suffix_array(line));
 }
 
 #[test]
-fn test_to_suffix_array_stack_2() {
+fn test_to_suffix_array_2() {
     let line =
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
-    let res = SuffixArray::<usize>::from_stack(SuffixTree::new(line))
-        .suffix_array()
-        .clone();
-    assert_eq!(res, trust_suffix_array(line));
-}
-
-#[test]
-fn test_to_suffix_array_stack_3() {
-    let line =
-    "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
-    ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
-    aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
-
-    let res = SuffixArray::<u32>::from_stack(SuffixTree::new(line))
+    let res = SuffixArray::<u32>::from(SuffixTree::new(line))
         .suffix_array()
         .clone();
     assert_eq!(
@@ -300,14 +286,14 @@ fn test_to_suffix_array_stack_3() {
     );
 }
 #[test]
-fn test_to_suffix_array_stack_4() {
+fn test_to_suffix_array_3() {
     let line =
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
-    let res = SuffixArray::<u16>::from_stack(SuffixTree::new(line))
+    let res = SuffixArray::<u16>::from(SuffixTree::new(line))
         .suffix_array()
         .clone();
     assert_eq!(
@@ -325,9 +311,9 @@ fn test_to_suffix_tree_1() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
-    let res = SuffixArray::<usize>::from_stack(SuffixTree::from(SuffixArray::<usize>::new(line)))
+    let res = SuffixArray::<usize>::from(SuffixTree::from(SuffixArray::<usize>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -335,9 +321,9 @@ fn test_to_suffix_tree_1() {
 
 #[test]
 fn test_to_suffix_tree_2() {
-    let line = "ccamxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
+    let line = "ccamxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
 
-    let res = SuffixArray::<usize>::from_stack(SuffixTree::from(SuffixArray::<usize>::new(line)))
+    let res = SuffixArray::<usize>::from(SuffixTree::from(SuffixArray::<usize>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -347,9 +333,9 @@ fn test_to_suffix_tree_2() {
 fn test_to_suffix_tree_3() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
-    let res = SuffixArray::<usize>::from_stack(SuffixTree::from(SuffixArray::<usize>::new(line)))
+    let res = SuffixArray::<usize>::from(SuffixTree::from(SuffixArray::<usize>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -370,7 +356,7 @@ fn test_to_suffix_tree_4() {
     man, spineless, and with no understanding. What about if he reported sick? But that would be extremely strained and
     suspicious as in fifteen years of service Gregor had never once yet been ill. H";
 
-    let res = SuffixArray::<usize>::from_stack(SuffixTree::from(SuffixArray::<usize>::new(line)))
+    let res = SuffixArray::<usize>::from(SuffixTree::from(SuffixArray::<usize>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -380,9 +366,9 @@ fn test_to_suffix_tree_4() {
 fn test_to_suffix_tree_5() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
-    let res = SuffixArray::<u32>::from_stack(SuffixTree::from(SuffixArray::<u32>::new(line)))
+    let res = SuffixArray::<u32>::from(SuffixTree::from(SuffixArray::<u32>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(
@@ -398,9 +384,9 @@ fn test_to_suffix_tree_5() {
 fn test_to_suffix_tree_6() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
-    let res = SuffixArray::<u16>::from_stack(SuffixTree::from(SuffixArray::<u32>::new(line)))
+    let res = SuffixArray::<u16>::from(SuffixTree::from(SuffixArray::<u32>::new(line)))
         .suffix_array()
         .clone();
     assert_eq!(
@@ -418,7 +404,7 @@ fn test_suffix_array_1() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -426,14 +412,14 @@ fn test_suffix_array_1() {
 
 #[test]
 fn test_suffix_array_2() {
-    let line = "mmiissiissiippii\0";
+    let line = "mmiissiissiippii";
     let res = SuffixArray::<usize>::new(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
 }
 
 #[test]
 fn test_suffix_array_3() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
+    let line = "ACGTGCCTAGCCTACCGTGCC";
     let res = SuffixArray::<usize>::new(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
 }
@@ -444,7 +430,7 @@ fn test_suffix_array_4() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -455,7 +441,7 @@ fn test_suffix_array_5() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u32>::new(line).suffix_array().clone();
     assert_eq!(
@@ -472,7 +458,7 @@ fn test_suffix_array_6() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u16>::new(line).suffix_array().clone();
     assert_eq!(
@@ -490,7 +476,7 @@ fn test_suffix_array_compress_1() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_compress(line)
         .suffix_array()
@@ -500,7 +486,7 @@ fn test_suffix_array_compress_1() {
 
 #[test]
 fn test_suffix_array_compress_2() {
-    let line = "mmiissiissiippii\0";
+    let line = "mmiissiissiippii";
     let res = SuffixArray::<usize>::new_compress(line)
         .suffix_array()
         .clone();
@@ -509,7 +495,7 @@ fn test_suffix_array_compress_2() {
 
 #[test]
 fn test_suffix_array_compress_3() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
+    let line = "ACGTGCCTAGCCTACCGTGCC";
     let res = SuffixArray::<usize>::new_compress(line)
         .suffix_array()
         .clone();
@@ -522,7 +508,7 @@ fn test_suffix_array_compress_4() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_compress(line)
         .suffix_array()
@@ -535,7 +521,7 @@ fn test_suffix_array_compress_5() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u32>::new_compress(line)
         .suffix_array()
@@ -554,7 +540,7 @@ fn test_suffix_array_compress_6() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u16>::new_compress(line)
         .suffix_array()
@@ -574,7 +560,7 @@ fn test_suffix_array_stack_1() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_stack(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -582,7 +568,7 @@ fn test_suffix_array_stack_1() {
 
 #[test]
 fn test_suffix_array_stack_2() {
-    let line = "mmiissiissiippii\0";
+    let line = "mmiissiissiippii";
 
     let res = SuffixArray::<usize>::new_stack(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -590,7 +576,7 @@ fn test_suffix_array_stack_2() {
 
 #[test]
 fn test_suffix_array_stack_3() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
+    let line = "ACGTGCCTAGCCTACCGTGCC";
 
     let res = SuffixArray::<usize>::new_stack(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -602,7 +588,7 @@ fn test_suffix_array_stack_4() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_stack(line).suffix_array().clone();
     assert_eq!(res, trust_suffix_array(line));
@@ -613,7 +599,7 @@ fn test_suffix_array_stack_5() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u32>::new_stack(line).suffix_array().clone();
     assert_eq!(
@@ -630,7 +616,7 @@ fn test_suffix_array_stack_6() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u16>::new_stack(line).suffix_array().clone();
     assert_eq!(
@@ -648,7 +634,7 @@ fn test_suffix_array_stack_compress_1() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_stack_compress(line)
         .suffix_array()
@@ -658,7 +644,7 @@ fn test_suffix_array_stack_compress_1() {
 
 #[test]
 fn test_suffix_array_stack_compress_2() {
-    let line = "mmiissiissiippii\0";
+    let line = "mmiissiissiippii";
 
     let res = SuffixArray::<usize>::new_stack_compress(line)
         .suffix_array()
@@ -668,7 +654,7 @@ fn test_suffix_array_stack_compress_2() {
 
 #[test]
 fn test_suffix_array_stack_compress_3() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
+    let line = "ACGTGCCTAGCCTACCGTGCC";
 
     let res = SuffixArray::<usize>::new_stack_compress(line)
         .suffix_array()
@@ -682,7 +668,7 @@ fn test_suffix_array_stack_compress_4() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<usize>::new_stack_compress(line)
         .suffix_array()
@@ -695,7 +681,7 @@ fn test_suffix_array_stack_compress_5() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u32>::new_stack_compress(line)
         .suffix_array()
@@ -714,7 +700,7 @@ fn test_suffix_array_stack_compress_6() {
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let res = SuffixArray::<u16>::new_stack_compress(line)
         .suffix_array()
@@ -734,7 +720,7 @@ fn test_find_suffix_array_big_find_big() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let sa = SuffixArray::<usize>::new(line);
 
@@ -772,7 +758,7 @@ fn test_find_big_suffix_array_1() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "yyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
 aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaoca";
 
@@ -786,7 +772,7 @@ fn test_find_big_suffix_array_2() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "yyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
 aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaoca";
 
@@ -804,7 +790,7 @@ fn test_find_suffix_array_1() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "yyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
 aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaoca";
 
@@ -818,7 +804,7 @@ fn test_find_suffix_array_2() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "yyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
 aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaoca";
 
@@ -836,7 +822,7 @@ fn test_find_suffix_array_big_find() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
 
     let sa = SuffixArray::<usize>::new(line);
 
@@ -873,7 +859,7 @@ fn test_find_all_suffix_array_1() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "caocacaoc";
 
     let sa = SuffixArray::<usize>::new(line);
@@ -890,7 +876,7 @@ fn test_find_all_suffix_array_2() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<usize>::new(line);
@@ -906,7 +892,7 @@ fn test_find_all_suffix_array_3() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<u32>::new(line);
@@ -925,7 +911,7 @@ fn test_find_all_suffix_array_4() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<u16>::new(line);
@@ -945,7 +931,7 @@ fn test_find_all_big_suffix_array_1() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "caocacaoc";
 
     let sa = SuffixArray::<usize>::new(line);
@@ -962,7 +948,7 @@ fn test_find_all_big_suffix_array_2() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<usize>::new(line);
@@ -978,7 +964,7 @@ fn test_find_all_big_suffix_array_3() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<u32>::new(line);
@@ -997,7 +983,7 @@ fn test_find_all_big_suffix_array_4() {
 "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
 ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
 aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
+aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
     let find = "o";
 
     let sa = SuffixArray::<u16>::new(line);
@@ -1012,43 +998,43 @@ aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocac
 }
 
 #[test]
-fn test_lcp_rec_suffix_tree_1() {
-    let line = "ocaocacao\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_suffix_tree_1() {
+    let line = "ocaocacao";
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_rec_suffix_tree_2() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_suffix_tree_2() {
+    let line = "ACGTGCCTAGCCTACCGTGCC";
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_rec_suffix_tree_3() {
-    let line = "mmiissiissiippii\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_suffix_tree_3() {
+    let line = "mmiissiissiippii";
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_rec_suffix_tree_4() {
+fn test_lcp_suffix_tree_4() {
     let line =
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_rec_suffix_tree_5() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_suffix_tree_5() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_rec_suffix_tree_6() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<u32>().owned().to_vec();
+fn test_lcp_suffix_tree_6() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let res = SuffixTree::new(line).lcp::<u32>().owned().to_vec();
     assert_eq!(
         res,
         trust_lcp(line)
@@ -1058,9 +1044,9 @@ fn test_lcp_rec_suffix_tree_6() {
     );
 }
 #[test]
-fn test_lcp_rec_suffix_tree_7() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<u16>().owned().to_vec();
+fn test_lcp_suffix_tree_7() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let res = SuffixTree::new(line).lcp::<u16>().owned().to_vec();
     assert_eq!(
         res,
         trust_lcp(line)
@@ -1068,46 +1054,106 @@ fn test_lcp_rec_suffix_tree_7() {
             .map(|&x| x as u16)
             .collect::<Vec<_>>()
     );
+}
+#[test]
+fn test_lcp_suffix_tree_8() {
+    let line = "aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbaaaaaaaaaaaaaaaaaaabbbbbbbbbaaaaaaaaaaaa";
+
+    let res = SuffixTree::new(line).lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
 }
 
 #[test]
-fn test_lcp_stack_suffix_tree_1() {
-    let line = "ocaocacao\0";
-    let res = SuffixTree::new(line).lcp_stack::<usize>().owned().to_vec();
+fn test_lcp_online_suffix_tree_1() {
+    let line = "ocaocacao";
+
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_2() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_online_suffix_tree_2() {
+    let line = "ACGTGCCTAGCCTACCGTGCC";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_3() {
-    let line = "mmiissiissiippii\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_online_suffix_tree_3() {
+    let line = "mmiissiissiippii";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_4() {
+fn test_lcp_online_suffix_tree_4() {
     let line =
     "ccacaoca______caocaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacacafgdfvdfvdcsdfsdfsd
     ocacaoccacaocacaoacaoacaaocacaocacocacaoaaaaaaaabaaaaaacacaocacaocacaocacaocacaocacaocacaocacao
     aocacaocacuuuuuuyyyyyyyyyyyuuuuuuuuuuyyyyyyyyysssssssssssssuuocacaocacaocacaocacaocacaocacaocac
-    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+    aocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacaocacwqe23";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_5() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<usize>().owned().to_vec();
+fn test_lcp_online_suffix_tree_5() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_6() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<u32>().owned().to_vec();
+fn test_lcp_online_suffix_tree_6() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<u32>().owned().to_vec();
     assert_eq!(
         res,
         trust_lcp(line)
@@ -1115,11 +1161,20 @@ fn test_lcp_stack_suffix_tree_6() {
             .map(|&x| x as u32)
             .collect::<Vec<_>>()
     );
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
 }
 #[test]
-fn test_lcp_stack_suffix_tree_7() {
-    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o\0";
-    let res = SuffixTree::new(line).lcp_rec::<u16>().owned().to_vec();
+fn test_lcp_online_suffix_tree_7() {
+    let line = "amxcbvmcxbv,njsdfaocacaocacuyuysuuocacasldjfhjsm.c,o";
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<u16>().owned().to_vec();
     assert_eq!(
         res,
         trust_lcp(line)
@@ -1127,18 +1182,41 @@ fn test_lcp_stack_suffix_tree_7() {
             .map(|&x| x as u16)
             .collect::<Vec<_>>()
     );
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+}
+#[test]
+fn test_lcp_online_suffix_tree_8() {
+    let line = "aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbaaaaaaaaaaaaaaaaaaabbbbbbbbbaaaaaaaaaaaa";
+
+    let mut ost = OnlineSuffixTree::new();
+    ost.add(line);
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
+
+    let mut ost = OnlineSuffixTree::new();
+    for i in 0..line.len() {
+        ost.add(&line[i..i + 1]);
+    }
+    let res = ost.finish().lcp::<usize>().owned().to_vec();
+    assert_eq!(res, trust_lcp(line));
 }
 
 #[test]
 fn test_lcp_suffix_array_1() {
-    let line = "ocaocacao\0";
+    let line = "ocaocacao";
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.lcp().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
 #[test]
 fn test_lcp_suffix_array_2() {
-    let line = "ACGTGCCTAGCCTACCGTGCC\0";
+    let line = "ACGTGCCTAGCCTACCGTGCC";
     let sa = SuffixArray::<usize>::new(line);
     let res = sa.lcp().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
@@ -1197,7 +1275,7 @@ fn test_lcp_suffix_array_7() {
 
 #[test]
 fn test_lcp_suffix_array_utf8_1() {
-    let line = "色は匂へど 散りぬるを\0";
+    let line = "色は匂へど 散りぬるを";
     let res = SuffixArray::<usize>::new(line).lcp().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
@@ -1206,7 +1284,7 @@ fn test_lcp_suffix_array_utf8_1() {
 fn test_lcp_suffix_array_utf8_2() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let res = SuffixArray::<usize>::new(line).lcp().owned().to_vec();
     assert_eq!(res, trust_lcp(line));
 }
@@ -1214,7 +1292,7 @@ fn test_lcp_suffix_array_utf8_2() {
 fn test_lcp_suffix_array_utf8_3() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let res = SuffixArray::<u32>::new(line).lcp().owned().to_vec();
     assert_eq!(
         res,
@@ -1228,7 +1306,7 @@ fn test_lcp_suffix_array_utf8_3() {
 fn test_lcp_suffix_array_utf8_4() {
     let line = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИ
     ЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЗИЙК
-    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\0";
+    ЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯSDDDSPЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
     let res = SuffixArray::<u16>::new(line).lcp().owned().to_vec();
     assert_eq!(
         res,

@@ -37,6 +37,18 @@ The current implementation builds suffix structures using bytes and does not dec
  // let sa = SuffixArray::<u32>::from(st);
  let sa = SuffixArray::<usize>::from(st);
 
+ // construct online suffix tree
+ let mut ost: OnlineSuffixTree = OnlineSuffixTree::new();
+
+ // add word to online suffix tree
+ ost.add(word);
+
+ // finds the entry position of the line 'find' in 'word'
+ let res: Option<usize> = ost.find(find);
+
+ // conver online suffix tree to suffix tree
+ let st = ost.finish();
+
  let graph = SuffixTree::new("mississippi").to_graphviz(&mut buff);
  println!("{}", &graph);
 ```

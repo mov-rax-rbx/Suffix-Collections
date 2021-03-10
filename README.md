@@ -46,8 +46,8 @@ The current implementation builds suffix structures using bytes and does not dec
  // finds the entry position of the line 'find' in 'word'
  let res: Option<usize> = ost.find(find);
 
- // conver online suffix tree to suffix tree
- let st = ost.finish();
+ // convert online suffix tree to suffix tree
+ let st: SuffixTree = ost.finish();
 
  let graph = SuffixTree::new("mississippi").to_graphviz(&mut buff);
  println!("{}", &graph);

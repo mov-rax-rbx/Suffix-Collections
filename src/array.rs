@@ -662,7 +662,7 @@ impl<T: SuffixIndices<T>> From<SuffixTree<'_>> for SuffixArray<'_, T> {
 
 fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
     let mut start = 0;
-    let mut cnt = if !x.is_empty() { x.len() - 1 } else { 0 };
+    let mut cnt = x.len();
     while cnt > 0 {
         let mid = start + cnt / 2;
         // safe 0 <= mid < x.len()

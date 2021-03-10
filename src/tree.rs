@@ -485,8 +485,8 @@ impl<T: SuffixIndices<T>> From<SuffixArray<'_, T>> for SuffixTree<'_> {
                     node_idx = add_idx;
                     break;
                 } else if pref_len < total_len[node_idx.unwrap()]
-                    && pref_len > total_len[suff_tree.node(node_idx).parent.unwrap()] {
-
+                    && pref_len > total_len[suff_tree.node(node_idx).parent.unwrap()]
+                {
                     let start = (start + pref_len).to_usize();
                     let len = suff_tree.word.as_bytes().len() - start;
 

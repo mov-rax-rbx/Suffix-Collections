@@ -1,7 +1,9 @@
 use self::suff_collections::array::*;
 use self::suff_collections::tree::*;
+use rand::{distributions::Alphanumeric, prelude::*};
 use suff_collections;
-use rand::{prelude::*, distributions::Alphanumeric};
+
+const TEST_ITERATIONS: usize = 256;
 
 fn to_normal_line(line: &str) -> String {
     if line.as_bytes().last() == Some(&0) {
@@ -93,10 +95,11 @@ fn trust_lcp(line: &str) -> Vec<usize> {
 fn test_build_ukkonen_and_find() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(2..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -124,10 +127,11 @@ fn test_build_ukkonen_and_find() {
 fn test_suffix_tree_to_suffix_array() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -150,10 +154,11 @@ fn test_suffix_tree_to_suffix_array() {
 fn test_suffix_array_to_suffix_tree_to_suffix_array() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -176,10 +181,11 @@ fn test_suffix_array_to_suffix_tree_to_suffix_array() {
 fn test_build_suffix_array() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -198,21 +204,26 @@ fn test_build_suffix_array() {
 fn test_build_suffix_array_compress() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
             .collect::<String>();
 
-        let res = SuffixArray::<usize>::new_compress(&line).suffix_array().clone();
+        let res = SuffixArray::<usize>::new_compress(&line)
+            .suffix_array()
+            .clone();
         assert_eq!(res, trust_suffix_array(&line));
     }
 
     let line = String::new();
-    let res = SuffixArray::<usize>::new_compress(&line).suffix_array().clone();
+    let res = SuffixArray::<usize>::new_compress(&line)
+        .suffix_array()
+        .clone();
     assert_eq!(res, trust_suffix_array(&line));
 }
 
@@ -220,21 +231,26 @@ fn test_build_suffix_array_compress() {
 fn test_build_suffix_array_stack() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
             .collect::<String>();
 
-        let res = SuffixArray::<usize>::new_stack(&line).suffix_array().clone();
+        let res = SuffixArray::<usize>::new_stack(&line)
+            .suffix_array()
+            .clone();
         assert_eq!(res, trust_suffix_array(&line));
     }
 
     let line = String::new();
-    let res = SuffixArray::<usize>::new_stack(&line).suffix_array().clone();
+    let res = SuffixArray::<usize>::new_stack(&line)
+        .suffix_array()
+        .clone();
     assert_eq!(res, trust_suffix_array(&line));
 }
 
@@ -242,21 +258,26 @@ fn test_build_suffix_array_stack() {
 fn test_build_suffix_array_stack_compress() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
             .collect::<String>();
 
-        let res = SuffixArray::<usize>::new_stack_compress(&line).suffix_array().clone();
+        let res = SuffixArray::<usize>::new_stack_compress(&line)
+            .suffix_array()
+            .clone();
         assert_eq!(res, trust_suffix_array(&line));
     }
 
     let line = String::new();
-    let res = SuffixArray::<usize>::new_stack_compress(&line).suffix_array().clone();
+    let res = SuffixArray::<usize>::new_stack_compress(&line)
+        .suffix_array()
+        .clone();
     assert_eq!(res, trust_suffix_array(&line));
 }
 
@@ -264,10 +285,11 @@ fn test_build_suffix_array_stack_compress() {
 fn test_build_suffix_array_and_find_big() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(2..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -297,10 +319,11 @@ fn test_build_suffix_array_and_find_big() {
 fn test_build_suffix_array_and_find_all_big() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(2..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -336,10 +359,11 @@ fn test_build_suffix_array_and_find_all_big() {
 fn test_build_suffix_array_and_find() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(2..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -369,10 +393,11 @@ fn test_build_suffix_array_and_find() {
 fn test_build_suffix_array_and_find_all() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(2..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -408,10 +433,11 @@ fn test_build_suffix_array_and_find_all() {
 fn test_build_suffix_tree_and_lcp() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -430,10 +456,11 @@ fn test_build_suffix_tree_and_lcp() {
 fn test_build_online_suffix_tree_to_suffix_tree_and_lcp() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)
@@ -470,10 +497,11 @@ fn test_build_online_suffix_tree_to_suffix_tree_and_lcp() {
 fn test_build_suffix_array_and_lcp() {
     let mut rng = thread_rng();
 
-    for _ in 0..256 {
+    for _ in 0..TEST_ITERATIONS {
         let cnt = rng.gen_range(1..1024);
 
-        let line = rng.clone()
+        let line = rng
+            .clone()
             .sample_iter(&Alphanumeric)
             .take(cnt)
             .map(char::from)

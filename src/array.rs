@@ -418,10 +418,12 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     pub fn lcp(&self) -> LCP<T> {
         let mut lcp = LCP::<T>::new(vec![T::zero(); self.sa.len()]);
         let mut sa_idx = vec![T::zero(); self.sa.len()];
+
         // safe max(sa) < sa_idx.len()
         self.sa.iter().enumerate().for_each(|(i, &x)| unsafe {
             *sa_idx.get_unchecked_mut(x.to_usize()) = T::try_from(i + 1).ok().unwrap()
         });
+
         let mut pref_len = T::zero();
         let word = self.word.as_bytes();
         for x in sa_idx {
@@ -429,6 +431,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                 pref_len = T::zero();
                 continue;
             }
+
             // safe max(sa_idx) < sa.len() && x < sa.len() by previous check
             // safe l < word.len() && r < word.len()
             let l = unsafe { *self.sa.get_unchecked(x.to_usize() - 1) };
@@ -440,6 +443,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
                     pref_len,
                 )
             };
+
             // safe x < sa.len() by previous check && lcp.len() == sa.len()
             unsafe {
                 *lcp.idx_mut(x.to_usize()) = pref_len;
@@ -467,8 +471,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         if start >= end {
             return None;
         }
-        // safe by previous operation
-        Some(unsafe { *self.sa.get_unchecked(start) })
+        Some(self.sa[start])
     }
 
     /// Find all substr. Complexity O(|find| * log(|word|))
@@ -482,8 +485,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     #[inline]
     pub fn find_all(&self, find: &str) -> &[T] {
         let (start, end) = self.find_pos(find);
-        // safe start <= end && 0 <= start < sa.len() && 0 <= end < sa.len()
-        unsafe { self.sa.get_unchecked(start..end) }
+        &self.sa[start..end]
     }
 
     /// Find substr. Complexity O(|word|)
@@ -497,8 +499,7 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
     #[inline]
     pub fn find_big(&self, lcp: &LCP<T>, find: &str) -> Option<T> {
         let idx = self.find_pos_big(lcp, find)?;
-        // safe by previous operation
-        Some(unsafe { *self.sa.get_unchecked(idx) })
+        Some(self.sa[idx])
     }
 
     /// Find all substr. Complexity O(|word|)
@@ -514,15 +515,14 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         match self.find_pos_big(lcp, find) {
             None => &[],
             Some(start) => {
-                // safe because 0 <= start < self.sa.len()
                 let end = start
                     + lcp
                         .iter()
                         .skip(start + 1)
                         .take_while(|&&lcp| find.len() <= lcp.to_usize())
                         .count();
-                // safe start <= end && 0 <= start < sa.len() && 0 <= end < sa.len()
-                unsafe { self.sa.get_unchecked(start..=end) }
+
+                &self.sa[start..=end]
             }
         }
     }
@@ -533,23 +533,14 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
             return (0, 0);
         }
         let (word, find) = (self.word.as_bytes(), find.as_bytes());
-        // start is searched for by means of binary search
-        let start = binary_search(&self.sa, |&idx| {
-            // safe because binary search correct =>
-            //  0 <= idx < self.sa.len() && max(sa) < word.len()
-            unsafe { word.get_unchecked(idx.to_usize()..) < find }
-        });
+        let start = binary_search(&self.sa, |&idx| &word[idx.to_usize()..] < find);
+
         // skip all matches
-        // safe because 0 <= start < self.sa.len()
         let end = start
-            + unsafe {
-                binary_search(self.sa.get_unchecked(start..), |&idx| {
-                    // safe because binary search correct =>
-                    //  0 <= idx < self.sa.len() && max(sa) < word.len()
-                    idx.to_usize() + find.len() < word.len()
-                        && word.get_unchecked(idx.to_usize()..idx.to_usize() + find.len()) == find
-                })
-            };
+            + binary_search(&self.sa[start..], |&idx| {
+                idx.to_usize() + find.len() < word.len()
+                    && &word[idx.to_usize()..idx.to_usize() + find.len()] == find
+            });
 
         (start, end)
     }
@@ -560,29 +551,17 @@ impl<'sa, T: SuffixIndices<T>> SuffixArray<'sa, T> {
         }
         let (word, find) = (self.word.as_bytes(), find.as_bytes());
         // entry of the first character (byte) is searched for by means of binary search
-        // safe because binary search correct =>
-        //  0 <= idx < self.sa.len() && max(sa) < word.len() && !find.is_empty()
-        let start = binary_search(&self.sa, |&idx| unsafe {
-            word.get_unchecked(idx.to_usize()) < find.get_unchecked(0)
-        });
+        let start = binary_search(&self.sa, |&idx| word[idx.to_usize()] < find[0]);
 
-        // loop continue while total_eq < find.len() and total_eq never decrement
         let mut total_eq = 0;
         for (&idx, i) in self.sa.iter().skip(start).zip((start + 1..).into_iter()) {
-            // safe word_idx < word.len() && total_eq < find.len()
-            total_eq = unsafe {
-                count_eq(
-                    word.get_unchecked(idx.to_usize()..),
-                    find.get_unchecked(..),
-                    total_eq,
-                )
-            };
+            total_eq = count_eq(&word[idx.to_usize()..], &find, total_eq);
+
             if total_eq == find.len() {
                 return Some(i - 1);
             }
 
-            // safe i < lcp.len()
-            if i < lcp.len() && total_eq > unsafe { lcp.idx(i).to_usize() } {
+            if i < lcp.len() && total_eq > lcp[i].to_usize() {
                 return None;
             }
         }
@@ -665,8 +644,7 @@ fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
     let mut cnt = x.len();
     while cnt > 0 {
         let mid = start + cnt / 2;
-        // safe 0 <= mid < x.len()
-        let this = unsafe { x.get_unchecked(mid) };
+        let this = &x[mid];
         if cmp(this) {
             start = mid + 1;
             cnt -= cnt / 2 + 1;
@@ -678,9 +656,9 @@ fn binary_search<T>(x: &[T], cmp: impl Fn(&T) -> bool) -> usize {
 }
 
 fn count_eq<T: Eq, P: SuffixIndices<P>>(cmp1: &[T], cmp2: &[T], mut acc: P) -> P {
-    while acc.to_usize() < cmp1.len() && acc.to_usize() < cmp2.len()
-    // safe by previous check
-        && unsafe { *cmp1.get_unchecked(acc.to_usize()) == *cmp2.get_unchecked(acc.to_usize()) }
+    while acc.to_usize() < cmp1.len()
+        && acc.to_usize() < cmp2.len()
+        && cmp1[acc.to_usize()] == cmp2[acc.to_usize()]
     {
         acc += P::one();
     }
@@ -1174,7 +1152,7 @@ pub(crate) mod build_suffix_array {
             // safe because max(idx_lms) < s_idx.len()
             naive_sort(&mut sort_lms, s_idx);
             sort_lms
-        } else if idx_lms.len() > 1 {
+        } else {
             clear(offset_dict);
             induced_sort(s_idx, idx_lms, t, offset_dict, tmp_end_s, sa, sa_init);
             let new_s_idx = create_new_str(s_idx, tmp_end_s, sa, t, idx_lms);
@@ -1183,8 +1161,6 @@ pub(crate) mod build_suffix_array {
             clear(offset_dict);
 
             sort_lms_in_new_str(&new_s_idx, offset_dict, tmp_end_s, sa, sa_init, idx_lms)
-        } else {
-            unreachable!();
         }
     }
     /// https://www.researchgate.net/profile/Daricks_Wai_Hong_Chan/publication/221577802_Linear_Suffix_Array_Construction_by_Almost_Pure_Induced-Sorting/links/00b495318a21ba484f000000/Linear-Suffix-Array-Construction-by-Almost-Pure-Induced-Sorting.pdf?origin=publication_detail
@@ -1260,7 +1236,7 @@ pub(crate) mod build_suffix_array {
             (vec![*idx_lms.get_unchecked(0)], NTState::End)
         } else if lms_is_unique(offset_dict) {
             (unpack_lms(&idx_lms, offset_dict), NTState::End)
-        } else if idx_lms.len() > 1 {
+        } else {
             clear(offset_dict);
             induced_sort(&s_idx, &idx_lms, &t, offset_dict, tmp_end_s, sa, sa_init);
             let new_s_idx = create_new_str(&s_idx, tmp_end_s, sa, &t, &idx_lms);
@@ -1274,8 +1250,6 @@ pub(crate) mod build_suffix_array {
                 suffix_array_stack_inner(offset_dict, tmp_end_s, sa, sa_init, state_stack),
                 NTState::RecEnd,
             )
-        } else {
-            unreachable!();
         };
 
         match end_state {
@@ -1346,7 +1320,7 @@ pub(crate) mod build_suffix_array {
                                 naive_sort(&mut sort_lms, &s_idx);
                                 res_lms = sort_lms;
                                 state_stack.push(TState::End(s_idx, slice));
-                            } else if idx_lms.len() > 1 {
+                            } else {
                                 clear(offset_dict);
                                 // safe size < offset_dict.len() && tmp_end_s.len() <= offset_dict.len() && sa.len() == s_idx.len()
                                 induced_sort(
@@ -1366,9 +1340,7 @@ pub(crate) mod build_suffix_array {
                                 debug_assert!(idx_lms.len() == new_s_idx.len());
                                 state_stack.push(TState::RecEnd(s_idx, idx_lms, slice));
                                 state_stack.push(TState::Rec(new_s_idx));
-                            } else {
-                                unreachable!();
-                            };
+                            }
                         }
                         TState::End(s_idx, t) => {
                             // safe size == idx_lms.len()
